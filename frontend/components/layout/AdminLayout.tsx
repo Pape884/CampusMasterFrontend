@@ -1,4 +1,3 @@
-// components/layout/DashboardLayout.tsx
 "use client"
 
 import SidebarMenu, { roleConfig, UserRole } from "./SidebarMenu"
@@ -7,9 +6,10 @@ import Header from "./Header"
 interface DashboardLayoutProps {
   children: React.ReactNode
   userRole: UserRole
+  title: string
 }
 
-const DashboardLayout = ({ children, userRole }: DashboardLayoutProps) => {
+const DashboardLayout = ({ children, userRole, title }: DashboardLayoutProps) => {
   const config = roleConfig[userRole]
 
   return (
@@ -21,7 +21,7 @@ const DashboardLayout = ({ children, userRole }: DashboardLayoutProps) => {
       
       {/* Contenu principal avec marge */}
       <main className="flex-1 p-8 ml-64">
-        <Header userRole={userRole} initial={config.initial} />
+        <Header userRole={userRole} initial={config.initial} title={title} />
         {children}
       </main>
     </div>

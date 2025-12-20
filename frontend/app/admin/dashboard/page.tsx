@@ -2,7 +2,7 @@
 "use client"
 
 import { useState } from "react"
-import AdminLayout from "@/components/layout/AdminLayout"
+import DashboardLayout from "@/components/layout/AdminLayout"
 import AdminDashboard from "@/components/dashboard/AdminDashboard"
 import TeacherDashboard from "@/components/dashboard/TeacherDashboard"
 import StudentDashboard from "@/components/dashboard/StudentDashboard"
@@ -26,9 +26,9 @@ export default function DashboardPage() {
   }
 
   return (
-    <AdminLayout userRole={userRole} title="Tableau de Bord">
+    <DashboardLayout userRole={userRole} title="Tableau de Bord">
       {renderDashboard()}
 
-    </AdminLayout>
+    </DashboardLayout>
   )
 }

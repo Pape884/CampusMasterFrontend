@@ -15,11 +15,11 @@ interface SidebarMenuProps {
 
 export const menuItems = {
   admin: [
-    { icon: Home, label: "Tableau de bord", href: "/dashboard" },
-    { icon: Users, label: "Utilisateurs", href: "/dashboard/users" },
-    { icon: BookOpen, label: "Departements", href: "/dashboard/departement" },
-    { icon: BarChart3, label: "Statistiques", href: "/dashboard/reports" },
-    { icon: Settings, label: "Paramètres", href: "/dashboard/settings" },
+    { icon: Home, label: "Tableau de bord", href: "/admin/dashboard" },
+    { icon: Users, label: "Utilisateurs", href: "/admin/users" },
+    { icon: BookOpen, label: "Departements", href: "/admin/departement" },
+    { icon: BarChart3, label: "Statistiques", href: "/admin/reports" },
+    { icon: Settings, label: "Paramètres", href: "/admin/settings" },
   ],
   teacher: [
     { icon: Home, label: "Tableau de bord", href: "/dashboard" },

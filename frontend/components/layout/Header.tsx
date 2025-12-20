@@ -8,11 +8,12 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 interface HeaderProps {
   userRole: "admin" | "teacher" | "student"
   initial: string
+  title: string
   onToggleSidebar?: () => void
   sidebarOpen?: boolean
 }
 
-const Header = ({ userRole, initial, onToggleSidebar, sidebarOpen }: HeaderProps) => {
+const Header = ({ userRole, initial, title, onToggleSidebar, sidebarOpen }: HeaderProps) => {
   const getWelcomeMessage = () => {
     switch (userRole) {
       case "admin":
@@ -40,7 +41,7 @@ const Header = ({ userRole, initial, onToggleSidebar, sidebarOpen }: HeaderProps
           </Button>
         )}
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-1">Tableau de bord</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-1">{title}</h1>
           <p className="text-gray-600">{getWelcomeMessage()}</p>
         </div>
       </div>
