@@ -68,7 +68,7 @@ export default function AddUser() {
     <div className="min-h-screen bg-background">
       <div className="p-8 mx-auto">
         <Link
-          href="/"
+          href="/users"
           className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"
         >
           <ArrowLeft className="h-4 w-4" />

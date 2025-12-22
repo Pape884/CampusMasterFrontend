@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Search, MoreVertical, Eye, Edit, Trash2, UserPlus, BookOpen, GraduationCap, Shield, Users } from "lucide-react"
 import StatsCard from "@/components/ui/StatsCards"
+import Link from "next/link"
 
 type UserRole = "admin" | "enseignant" | "etudiant"
 type UserStatus = "actif" | "inactif"
@@ -197,10 +198,12 @@ export function UsersTable() {
                 </SelectContent>
               </Select>
 
-              <Button>
-                <UserPlus className="w-4 h-4 mr-2" />
-                Ajouter
-              </Button>
+              <Link href="/admin/user/add">
+                <Button>
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  Ajouter
+                </Button>
+              </Link>
             </div>
           </div>
 
@@ -259,12 +262,16 @@ export function UsersTable() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem>
-                                <Eye className="w-4 h-4 mr-2" />
-                                Détails
+                                <Link href={`/user/${user.id}`}>
+                                  <Eye className="w-4 h-4 mr-2" />
+                                  Détails
+                                </Link>
                               </DropdownMenuItem>
                               <DropdownMenuItem>
+                                <Link href={`/admin/user/${user.id}/edit`}>
                                 <Edit className="w-4 h-4 mr-2" />
                                 Modifier
+                                </Link>
                               </DropdownMenuItem>
                               <DropdownMenuItem className="text-destructive">
                                 <Trash2 className="w-4 h-4 mr-2" />

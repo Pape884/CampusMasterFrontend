@@ -4,6 +4,7 @@ import { Building2, Users, GraduationCap, BookOpen } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import StatsCard from "@/components/ui/StatsCards"
+import Link from "next/link"
 
 const departments = [
   {
@@ -79,6 +80,15 @@ export default function DepartmentCards() {
   return (
     <>
       <StatsCard stats={stats} />
+      {/* bouton pour ajouter un departement */}
+      <div className="mb-6">
+        
+        <Button variant="default" className="bg-foreground text-background hover:bg-foreground/90">
+          <Link href="/admin/department/add">
+            Ajouter un Département
+          </Link>
+        </Button>
+      </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {departments.map((dept, index) => (
           <Card key={index} className="p-6 border border-border bg-card">
@@ -125,10 +135,14 @@ export default function DepartmentCards() {
 
             {/* Actions */}
             <div className="grid grid-cols-2 gap-3">
-              <Button variant="outline" className="w-full bg-transparent">
-                Voir détails
-              </Button>
-              <Button className="w-full bg-foreground text-background hover:bg-foreground/90">Gérer</Button>
+              <Link href={`/admin/department/${index + 1}`}>
+                <Button variant="outline" className="w-full bg-transparent">
+                  Voir détails
+                </Button>
+              </Link>
+              <Link href={`/admin/department/${index + 1}/edit`} >
+                <Button className="w-full bg-foreground text-background hover:bg-foreground/90">Modifier</Button>
+              </Link>
             </div>
           </Card>
         ))}

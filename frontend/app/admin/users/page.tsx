@@ -4,7 +4,7 @@ import { useState } from "react"
 import StudentDashboard from "@/components/dashboard/StudentDashboard"
 import TeacherDashboard from "@/components/dashboard/TeacherDashboard"
 import { UserRole } from "@/components/layout/SidebarMenu"
-import {UsersTable} from "@/components/admin/users/userInterface"
+import {UsersTable} from "@/components/admin/users/userList"
 import AdminLayout from "@/components/layout/AdminLayout"
 
 export default function UsersPage(){
