@@ -3,7 +3,7 @@
 import { useState } from "react";
 import StudentDashboard from "@/components/dashboard/StudentDashboard";
 import TeacherDashboard from "@/components/dashboard/TeacherDashboard";
-import AdminLayout from "@/components/layout/AdminLayout";
+import Layout from "@/components/layout/Layout";
 import { UserRole } from "@/components/layout/SidebarMenu";
 import AdminSettings from "@/components/admin/settings/settings";
 
@@ -25,9 +25,9 @@ export default function SettingsPage(){
  }
 
   return (
-       <AdminLayout userRole={userRole} title="Paramètres Système">
+       <Layout userRole={userRole} title="Paramètres Système">
             {renderViews()}
-        </AdminLayout>
+        </Layout>
 
   )
 }

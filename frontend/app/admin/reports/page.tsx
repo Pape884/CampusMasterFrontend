@@ -4,7 +4,7 @@ import { useState } from "react";
 import AdminReports from "@/components/admin/admin-reports";
 import StudentDashboard from "@/components/dashboard/StudentDashboard";
 import TeacherDashboard from "@/components/dashboard/TeacherDashboard";
-import AdminLayout from "@/components/layout/AdminLayout";
+import Layout from "@/components/layout/Layout";
 import { UserRole } from "@/components/layout/SidebarMenu";
 
 
@@ -28,9 +28,9 @@ export default function ReportsPage(){
  }
 
   return (
-       <AdminLayout userRole={userRole} title="Rapports Administratifs">
+       <Layout userRole={userRole} title="Rapports Administratifs">
             {renderViews()}
-        </AdminLayout>
+        </Layout>
 
   )
 }

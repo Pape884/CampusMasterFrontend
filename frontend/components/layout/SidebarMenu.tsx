@@ -46,7 +46,7 @@ export const roleConfig = {
 
 const menuItems: Record<UserRole, { label: string; href: string; icon: React.ComponentType<{ className?: string }> }[]> = {
     admin: [
-      { label: "Tableau de bord", href: "/admin/dashboard", icon: Home },
+      { label: "Tableau de bord", href: "/dashboard", icon: Home },
       { label: "Utilisateurs", href: "/admin/users", icon: Users},
       { label: "Départements", href: "/admin/department", icon: Users },
       { label: "Rapports", href: "/admin/reports", icon: FileText },
@@ -54,13 +54,13 @@ const menuItems: Record<UserRole, { label: string; href: string; icon: React.Com
       { label: "Paramètres", href: "/admin/settings", icon: Settings },
     ],
     teacher: [
-      { label: "Tableau de bord", href: "/teacher/dashboard", icon: Home },
+      { label: "Tableau de bord", href: "/dashboard", icon: Home },
       { label: "Mes Cours", href: "/teacher/courses", icon: BookOpen },
-      { label: "Calendrier", href: "/teacher/calendar", icon: Calendar },
-      { label: "Paramètres", href: "/teacher/settings", icon: Settings },
+      { label: "Mes Étudiants", href: "/teacher/students", icon: Users },
+      { label: "Devoirs", href: "/teacher/devoirs", icon: FileText },
     ],
     student: [
-      { label: "Tableau de bord", href: "/student/dashboard", icon: Home },
+      { label: "Tableau de bord", href: "/dashboard", icon: Home },
       { label: "Mes Cours", href: "/student/courses", icon: BookOpen },
       { label: "Calendrier", href: "/student/calendar", icon: Calendar },
       { label: "Récompenses", href: "/student/awards", icon: Award },

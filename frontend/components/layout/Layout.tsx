@@ -3,13 +3,13 @@
 import SidebarMenu, { roleConfig, UserRole } from "./SidebarMenu"
 import Header from "./Header"
 
-interface DashboardLayoutProps {
+interface LayoutProps {
   children: React.ReactNode
   userRole: UserRole
   title: string
 }
 
-const DashboardLayout = ({ children, userRole, title }: DashboardLayoutProps) => {
+const Layout = ({ children, userRole, title }: LayoutProps) => {
   const config = roleConfig[userRole]
 
   return (
@@ -28,4 +28,4 @@ const DashboardLayout = ({ children, userRole, title }: DashboardLayoutProps) =>
   )
 }
 
-export default DashboardLayout
+export default Layout

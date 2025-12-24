@@ -2,7 +2,7 @@
 import AddDepartmentPage from "@/components/admin/departement/add-department"
 import StudentDashboard from "@/components/dashboard/StudentDashboard"
 import TeacherDashboard from "@/components/dashboard/TeacherDashboard"
-import AdminLayout from "@/components/layout/AdminLayout"
+import Layout from "@/components/layout/Layout"
 import { UserRole } from "@/components/layout/SidebarMenu"
 import { useState } from "react"
 
@@ -24,9 +24,9 @@ export default function AddDepartment() {
     }
 
     return (
-        <AdminLayout userRole={userRole} title="Gestion des Départements">
+        <Layout userRole={userRole} title="Gestion des Départements">
             {renderViews()}
-        </AdminLayout>
+        </Layout>
 
     )
 }

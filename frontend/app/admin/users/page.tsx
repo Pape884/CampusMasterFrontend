@@ -5,7 +5,7 @@ import StudentDashboard from "@/components/dashboard/StudentDashboard"
 import TeacherDashboard from "@/components/dashboard/TeacherDashboard"
 import { UserRole } from "@/components/layout/SidebarMenu"
 import {UsersTable} from "@/components/admin/users/userList"
-import AdminLayout from "@/components/layout/AdminLayout"
+import Layout from "@/components/layout/Layout"
 
 export default function UsersPage(){
   const [userRole] = useState<UserRole>("admin") // Changez cette valeur pour tester différents rôles
@@ -23,9 +23,9 @@ export default function UsersPage(){
  }
 
   return (
-       <AdminLayout userRole={userRole} title="Gestions des Utilisateurs">
+       <Layout userRole={userRole} title="Gestions des Utilisateurs">
             {renderViews()}
-        </AdminLayout>
+        </Layout>
 
   )
 }

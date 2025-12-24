@@ -2,7 +2,7 @@
 import EditUser from "@/components/admin/users/edit-user"
 import StudentDashboard from "@/components/dashboard/StudentDashboard"
 import TeacherDashboard from "@/components/dashboard/TeacherDashboard"
-import AdminLayout from "@/components/layout/AdminLayout"
+import Layout from "@/components/layout/Layout"
 import { UserRole } from "@/components/layout/SidebarMenu"
 import { useState } from "react"
 
@@ -25,9 +25,9 @@ export default function EditUserPage() {
  }
 
   return (
-       <AdminLayout userRole={userRole} title="Gestion des utilisateurs">
+       <Layout userRole={userRole} title="Gestion des utilisateurs">
             {renderViews()}
-        </AdminLayout>
+        </Layout>
 
   )
 }

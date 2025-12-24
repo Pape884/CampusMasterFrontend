@@ -2,7 +2,7 @@
 "use client"
 
 import { useState } from "react"
-import AdminLayout from "@/components/layout/AdminLayout"
+import Layout from "@/components/layout/Layout"
 import AdminDashboard from "@/components/dashboard/AdminDashboard"
 import TeacherDashboard from "@/components/dashboard/TeacherDashboard"
 import StudentDashboard from "@/components/dashboard/StudentDashboard"
@@ -10,7 +10,7 @@ import StudentDashboard from "@/components/dashboard/StudentDashboard"
 type UserRole = "admin" | "teacher" | "student"
 
 export default function DashboardPage() {
-  const [userRole] = useState<UserRole>("admin") // Changez cette valeur pour tester différents rôles
+  const [userRole] = useState<UserRole>("teacher") // Changez cette valeur pour tester différents rôles
 
   const renderDashboard = () => {
     switch (userRole) {
@@ -26,9 +26,9 @@ export default function DashboardPage() {
   }
 
   return (
-    <AdminLayout userRole={userRole} title="Tableau de Bord">
+    <Layout userRole={userRole} title="Tableau de Bord">
       {renderDashboard()}
 
-    </AdminLayout>
+    </Layout>
   )
 }
