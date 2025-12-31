@@ -10,7 +10,7 @@ import StudentDashboard from "@/components/dashboard/StudentDashboard"
 type UserRole = "admin" | "teacher" | "student"
 
 export default function DashboardPage() {
-  const [userRole] = useState<UserRole>("teacher") // Changez cette valeur pour tester différents rôles
+  const [userRole] = useState<UserRole>("student") // Changez cette valeur pour tester différents rôles
 
   const renderDashboard = () => {
     switch (userRole) {

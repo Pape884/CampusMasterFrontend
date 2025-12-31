@@ -4,13 +4,14 @@ import {
   Home,
   Users,
   BookOpen,
-  BarChart3,
   Settings,
   FileText,
   Calendar,
   Award,
   LogOut,
   GraduationCap,
+  User,
+  MessageCircle,
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -50,21 +51,25 @@ const menuItems: Record<UserRole, { label: string; href: string; icon: React.Com
       { label: "Utilisateurs", href: "/admin/users", icon: Users},
       { label: "Départements", href: "/admin/department", icon: Users },
       { label: "Rapports", href: "/admin/reports", icon: FileText },
+      { label: "Messagerie", href: "/messages", icon: MessageCircle },
       { label: "Calendrier", href: "/admin/calendar", icon: Calendar },
       { label: "Paramètres", href: "/admin/settings", icon: Settings },
     ],
     teacher: [
       { label: "Tableau de bord", href: "/dashboard", icon: Home },
       { label: "Mes Cours", href: "/teacher/courses", icon: BookOpen },
-      { label: "Mes Étudiants", href: "/teacher/students", icon: Users },
       { label: "Devoirs", href: "/teacher/devoirs", icon: FileText },
+      { label: "Mes Étudiants", href: "/teacher/students", icon: Users },
+      { label: "Messagerie", href: "/messages", icon: MessageCircle },
+      { label: "Profile", href: "/profile", icon: User },
     ],
     student: [
       { label: "Tableau de bord", href: "/dashboard", icon: Home },
       { label: "Mes Cours", href: "/student/courses", icon: BookOpen },
-      { label: "Calendrier", href: "/student/calendar", icon: Calendar },
-      { label: "Récompenses", href: "/student/awards", icon: Award },
-      { label: "Paramètres", href: "/student/settings", icon: Settings },
+      { label: "Mes Devoirs", href: "/student/assignments", icon: FileText },
+      { label: "Mes Notes", href: "/student/notes", icon: Award },
+      { label: "Messagerie", href: "/messages", icon: MessageCircle },
+      { label: "Profile", href: "/profile", icon: User },
     ],
   } 
 
