@@ -6,19 +6,31 @@ import Layout from "@/components/layout/Layout"
 import AdminDashboard from "@/components/dashboard/AdminDashboard"
 import TeacherDashboard from "@/components/dashboard/TeacherDashboard"
 import StudentDashboard from "@/components/dashboard/StudentDashboard"
+import LoadingSpinner from "@/components/ui/LoadingSpinner"
+import Unauthorized from "@/components/ui/Unauthorized"
+import { useAuthContext } from "@/context/authContext"
 
-type UserRole = "admin" | "teacher" | "student"
 
 export default function DashboardPage() {
-  const [userRole] = useState<UserRole>("student") // Changez cette valeur pour tester différents rôles
+  const { user, isLoading } = useAuthContext();
+  // Pendant le chargement
+  if (isLoading) {
+    return <LoadingSpinner message="Chargement du tableau de bord..." />;
+  }
+  
+  // Si pas d'utilisateur
+  if (!user) {
+    return <Unauthorized />;
+  }
+
 
   const renderDashboard = () => {
-    switch (userRole) {
-      case "admin":
+    switch (user.role) {
+      case "ADMIN":
         return <AdminDashboard />
-      case "teacher":
+      case "TEACHER":
         return <TeacherDashboard />
-      case "student":
+      case "STUDENT":
         return <StudentDashboard />
       default:
         return null
@@ -26,7 +38,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <Layout userRole={userRole} title="Tableau de Bord">
+    <Layout userRole={user.role as "ADMIN" | "TEACHER" | "STUDENT"} title="Tableau de Bord">
       {renderDashboard()}
 
     </Layout>

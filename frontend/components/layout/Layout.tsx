@@ -2,10 +2,11 @@
 
 import SidebarMenu, { roleConfig, UserRole } from "./SidebarMenu"
 import Header from "./Header"
+import { withAuth } from "@/context/authContext"
 
 interface LayoutProps {
   children: React.ReactNode
-  userRole: UserRole
+  userRole:  "ADMIN" | "TEACHER" | "STUDENT"
   title: string
 }
 
@@ -36,4 +37,4 @@ const Layout = ({ children, userRole, title }: LayoutProps) => {
   )
 }
 
-export default Layout
+export default withAuth(Layout)

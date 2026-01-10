@@ -18,26 +18,26 @@ import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import ThemeToggle from "@/components/ThemeToggle"
 
-export type UserRole = "admin" | "teacher" | "student"
+export type UserRole = "ADMIN" | "TEACHER" | "STUDENT"
 
 interface SidebarMenuProps {
   userRole: UserRole
   title: string
 }
 export const roleConfig = { 
-  admin: { 
+  ADMIN: { 
     title: "LMS Admin", 
     color: "blue", 
     gradient: "from-blue-50 via-indigo-50 to-purple-50", 
     initial: "AD", 
   }, 
-  teacher: { 
+  TEACHER: { 
     title: "LMS Enseignant", 
     color: "green", 
     gradient: "from-green-50 via-emerald-50 to-teal-50", 
     initial: "EN", 
   }, 
-  student: { 
+  STUDENT: { 
     title: "LMS Étudiant", 
     color: "purple", 
     gradient: "from-purple-50 via-violet-50 to-fuchsia-50", 
@@ -46,7 +46,7 @@ export const roleConfig = {
 }
 
 const menuItems: Record<UserRole, { label: string; href: string; icon: React.ComponentType<{ className?: string }> }[]> = {
-    admin: [
+    ADMIN: [
       { label: "Tableau de bord", href: "/dashboard", icon: Home },
       { label: "Utilisateurs", href: "/admin/users", icon: Users},
       { label: "Départements", href: "/admin/department", icon: Users },
@@ -55,7 +55,7 @@ const menuItems: Record<UserRole, { label: string; href: string; icon: React.Com
       { label: "Calendrier", href: "/admin/calendar", icon: Calendar },
       { label: "Paramètres", href: "/admin/settings", icon: Settings },
     ],
-    teacher: [
+    TEACHER: [
       { label: "Tableau de bord", href: "/dashboard", icon: Home },
       { label: "Mes Cours", href: "/teacher/courses", icon: BookOpen },
       { label: "Devoirs", href: "/teacher/devoirs", icon: FileText },
@@ -63,7 +63,7 @@ const menuItems: Record<UserRole, { label: string; href: string; icon: React.Com
       { label: "Messagerie", href: "/messages", icon: MessageCircle },
       { label: "Profile", href: "/profile", icon: User },
     ],
-    student: [
+    STUDENT: [
       { label: "Tableau de bord", href: "/dashboard", icon: Home },
       { label: "Mes Cours", href: "/student/courses", icon: BookOpen },
       { label: "Mes Devoirs", href: "/student/assignments", icon: FileText },

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 
 interface HeaderProps {
-  userRole: "admin" | "teacher" | "student"
+  userRole: "ADMIN" | "TEACHER" | "STUDENT"
   initial: string
   title: string
   onToggleSidebar?: () => void
@@ -15,11 +15,11 @@ interface HeaderProps {
 const Header = ({ userRole, initial, title, onToggleSidebar, sidebarOpen }: HeaderProps) => {
   const getWelcomeMessage = () => {
     switch (userRole) {
-      case "admin":
+      case "ADMIN":
         return "Bienvenue sur votre interface administrateur"
-      case "teacher":
+      case "TEACHER":
         return "Gérez vos cours et suivez vos étudiants"
-      case "student":
+      case "STUDENT":
         return "Continuez votre parcours d'apprentissage"
       default:
         return ""

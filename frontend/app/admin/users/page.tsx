@@ -4,29 +4,30 @@ import { useState } from "react"
 import { StatsCards } from "@/components/cards/state-card"
 import { UserRole } from "@/components/layout/SidebarMenu"
 import {UsersTable} from "@/components/admin/users/userList"
-import AdminLayout from "@/components/layout/Layout"
 import Layout from "@/components/layout/Layout"
+import LoadingSpinner from "@/components/ui/LoadingSpinner"
+import Unauthorized from "@/components/ui/Unauthorized"
+import { useAuthContext } from "@/context/authContext"
 
 export default function UsersPage(){
-  const [userRole] = useState<UserRole>("admin") // Changez cette valeur pour tester différents rôles
-  const renderDashboard = () => {
-    switch (userRole) {
-        case "admin":
-            return <UsersTable />
-        case "teacher":
-            return null
-        case "student":
-            return null
-        default:
-            return null
+  const [userRole] = useState<UserRole>() // Changez cette valeur pour tester différents rôles
+  const { user, isLoading } = useAuthContext();
+    // Pendant le chargement
+    if (isLoading) {
+      return <LoadingSpinner message="Chargement du tableau de bord..." />;
     }
- }
+    
+    // Si pas d'utilisateur
+    if (!user) {
+      return <Unauthorized />;
+    }
+  
 
   return (
-       <Layout userRole={userRole} title="Gestion des utilisateurs">
+       <Layout userRole={user.role as "ADMIN" | "TEACHER" | "STUDENT"} title="Gestion des utilisateurs">
             <StatsCards />
             <br />
-            {renderDashboard()}
+            <UsersTable />
         </Layout>
   )
 }

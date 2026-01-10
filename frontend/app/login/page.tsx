@@ -1,7 +1,32 @@
+"use client";
+
+import { redirect } from "next/navigation";
+import { useEffect } from "react";
 import { LoginForm } from "../../components//login/login-form"
 import { BookOpen, GraduationCap, Sparkles } from "lucide-react"
+import { useAuthContext } from "@/context/authContext";
 
 export default function Page() {
+  const { isAuthenticated, isLoading } = useAuthContext();
+
+  // Redirection si déjà authentifié
+  useEffect(() => {
+    if (isAuthenticated && !isLoading) {
+      redirect('/dashboard');
+    }
+  }, [isAuthenticated, isLoading]);
+
+  if (isLoading) {
+    return (
+      <div className="container flex items-center justify-center min-h-screen">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+          <p className="text-muted-foreground">Vérification de l'authentification...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-svh w-full">
       <div className="hidden lg:flex lg:w-1/2 bg-primary items-center justify-center p-12 relative overflow-hidden">
