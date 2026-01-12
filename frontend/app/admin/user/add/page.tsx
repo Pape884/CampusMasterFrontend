@@ -1,31 +1,28 @@
 "use client"
 
 import AddUser from "@/components/admin/users/add-user"
-import StudentDashboard from "@/components/dashboard/StudentDashboard"
-import TeacherDashboard from "@/components/dashboard/TeacherDashboard"
 import Layout from "@/components/layout/Layout"
-import { UserRole } from "@/components/layout/SidebarMenu"
-import { useState } from "react"
+import LoadingSpinner from "@/components/ui/LoadingSpinner"
+import Unauthorized from "@/components/ui/Unauthorized"
+import { useAuthContext } from "@/context/authContext"
 
-export default function addUserPage(){
-    const [userRole] = useState<UserRole>("admin") // Changez cette valeur pour tester différents rôles
-  const renderViews= () => {
-    switch (userRole) {
-        case "admin":
-            return <AddUser />
-        case "teacher":
-            return <TeacherDashboard />
-        case "student":
-            return <StudentDashboard />
-        default:
-            return null
-    }
- }
+export default function addUserPage() {
+
+  const { user, isLoading } = useAuthContext();
+  // Pendant le chargement
+  if (isLoading) {
+    return <LoadingSpinner message="Chargement des données..." />;
+  }
+
+  // Si pas d'utilisateur
+  if (!user) {
+    return <Unauthorized />;
+  }
 
   return (
-       <Layout userRole={userRole} title="Gestion des utilisateurs">
-            {renderViews()}
-        </Layout>
+    <Layout userRole={user.role} title="Gestion des utilisateurs">
+      <AddUser />
+    </Layout>
 
   )
 }

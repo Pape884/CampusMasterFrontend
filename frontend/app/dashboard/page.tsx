@@ -38,7 +38,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <Layout userRole={user.role as "ADMIN" | "TEACHER" | "STUDENT"} title="Tableau de Bord">
+    <Layout userRole={user.role} title="Tableau de Bord">
       {renderDashboard()}
 
     </Layout>

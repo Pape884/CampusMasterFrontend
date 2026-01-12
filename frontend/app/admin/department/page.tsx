@@ -6,25 +6,21 @@ import TeacherDashboard from "@/components/dashboard/TeacherDashboard"
 import { UserRole } from "@/components/layout/SidebarMenu"
 import DepartemantList from "@/components/admin/departement/departementList"
 import Layout from "@/components/layout/Layout"
+import LoadingSpinner from "@/components/ui/LoadingSpinner"
+import Unauthorized from "@/components/ui/Unauthorized"
+import { useAuthContext } from "@/context/authContext"
 
 export default function DepartmentPage(){
-  const [userRole] = useState<UserRole>("admin") // Changez cette valeur pour tester différents rôles
-  const renderViews= () => {
-    switch (userRole) {
-        case "admin":
-            return <DepartemantList />
-        case "teacher":
-            return <TeacherDashboard />
-        case "student":
-            return <StudentDashboard />
-        default:
-            return null
-    }
- }
+  const { user } = useAuthContext();
+      
+      // Si pas d'utilisateur
+      if (!user) {
+        return <Unauthorized />;
+      }
 
   return (
-       <Layout userRole={userRole} title="Gestions des Départements">
-            {renderViews()}
+       <Layout userRole={user.role} title="Gestions des Départements">
+            <DepartemantList />
         </Layout>
 
   )

@@ -14,7 +14,7 @@ export default function UsersPage(){
   const { user, isLoading } = useAuthContext();
     // Pendant le chargement
     if (isLoading) {
-      return <LoadingSpinner message="Chargement du tableau de bord..." />;
+      return <LoadingSpinner message="Chargement des utilisateurs..." />;
     }
     
     // Si pas d'utilisateur
@@ -24,7 +24,7 @@ export default function UsersPage(){
   
 
   return (
-       <Layout userRole={user.role as "ADMIN" | "TEACHER" | "STUDENT"} title="Gestion des utilisateurs">
+       <Layout userRole={user.role} title="Gestion des utilisateurs">
             <StatsCards />
             <br />
             <UsersTable />
