@@ -8,7 +8,7 @@ interface StatCard {
   title: string
   value: string
   icon: LucideIcon
-  description: string
+  description?: string
   gradient: string
 }
 
@@ -26,7 +26,7 @@ const StatsCards = ({ stats }: StatsCardsProps) => {
           </CardHeader>
           <CardContent>
             <div className="flex items-end justify-between">
-              <div className="text-3xl font-bold">{stat.value}</div>
+              <div className="text-3xl font-bold">{stat.value || 0}</div>
               <stat.icon className="w-8 h-8 opacity-80" />
             </div>
             <p className="text-xs opacity-80 mt-2">{stat.description}</p>

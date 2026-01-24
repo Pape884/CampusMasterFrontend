@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { userService, User, UserFilters, UsersResponse } from '@/lib/api/services/user.service';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { userService, UserFilters } from '@/lib/api/services/user.service';
 import { cacheManager } from '@/lib/api/axios/cache';
+import { UsersResponse } from '../api/services';
 
 interface UseUsersQueryOptions extends UserFilters {
   enabled?: boolean;
@@ -25,50 +26,53 @@ export function useUsersQuery(options: UseUsersQueryOptions = {}) {
   const [error, setError] = useState<Error | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  //memoriser le filtre
+  const memoizedFilters = useMemo(() => ({
+    search: filters.search,
+    status: filters.status,
+    page: filters.page,
+    limit: filters.limit,
+    sortBy: filters.sortBy,
+    sortOrder: filters.sortOrder,
+  }), [
+    filters.search,
+    filters.status,
+    filters.page,
+    filters.limit,
+    filters.sortBy,
+    filters.sortOrder,
+  ]);
+
   const fetchUsers = useCallback(async (isRefresh = false) => {
+
     if (!enabled) return;
 
-    if (isRefresh) {
-      setIsRefreshing(true);
-    } else {
-      setIsLoading(true);
-    }
-    
+    isRefresh ? setIsRefreshing(true) : setIsLoading(true);
     setError(null);
 
     try {
-      const result = await userService.getUsers(filters);
-      
+      const result = await userService.getUsers(memoizedFilters);
       setData(result);
-      
-      if (onSuccess) {
-        onSuccess(result);
-      }
-      
-      console.log(`✅ ${result.users.length} utilisateurs chargés`);
-      
+      onSuccess?.(result);
       return result;
     } catch (err: any) {
-      const error = err instanceof Error ? err : new Error('Erreur de chargement');
+      const error = err instanceof Error ? err : new Error("Erreur de chargement");
       setError(error);
-      
-      if (onError) {
-        onError(error);
-      }
-      
+      onError?.(error);
       throw error;
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [enabled, filters, onSuccess, onError]);
+  }, [enabled, memoizedFilters, onSuccess, onError]);
+
 
   // Chargement initial
+
   useEffect(() => {
-    if (refetchOnMount && enabled) {
-      fetchUsers();
-    }
-  }, [fetchUsers, refetchOnMount, enabled]);
+    if (!enabled || data) return;
+    fetchUsers();
+  }, [enabled]);
 
   // Rafraîchir avec les mêmes filtres
   const refetch = useCallback(() => {

@@ -2,73 +2,83 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { ArrowLeft, Plus, X, Building2, Users, BookOpen, GraduationCap } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Module } from "@/lib/api/services"
+import { error } from "console"
+import { departmentService } from "@/lib/api/services/department.service"
+import { toast } from "sonner"
+import { useRouter } from "next/navigation"
 
-interface Module {
-  id: string
-  name: string
-  code: string
-  courses: Course[]
-}
-
-interface Course {
-  id: string
-  name: string
-  code: string
-  credits: number
-}
 
 export default function EditDepartmentPage({ params }: { params: { id: string } }) {
   // Données simulées à éditer
   const [formData, setFormData] = useState({
-    name: "Département de Mathématiques",
-    code: "MATH",
-    description: "Le département de mathématiques offre une formation complète en mathématiques pures et appliquées.",
-    director: "Dr. Marie Dubois",
-    budget: "450000",
+    id: params.id,
+    name: "",
+    code: "",
+    description: "",
   })
 
-  const [modules, setModules] = useState<Module[]>([
-    {
-      id: "1",
-      name: "Algèbre",
-      code: "ALG",
-      courses: [
-        { id: "1-1", name: "Algèbre Linéaire", code: "ALG101", credits: 6 },
-        { id: "1-2", name: "Algèbre Abstraite", code: "ALG201", credits: 6 },
-      ],
-    },
-    {
-      id: "2",
-      name: "Analyse",
-      code: "ANA",
-      courses: [{ id: "2-1", name: "Analyse Réelle", code: "ANA101", credits: 6 }],
-    },
-  ])
+  const [modules, setModules] = useState<Module[]>([])
 
   const [showModuleForm, setShowModuleForm] = useState(false)
-  const [currentModule, setCurrentModule] = useState({ name: "", code: "" })
+  const [currentModule, setCurrentModule] = useState({ id: "", name: "", code: "", semestre: "" })
   const [currentCourse, setCurrentCourse] = useState({ name: "", code: "", credits: "" })
   const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const router = useRouter();
+
+
+  useEffect(() => {
+    const fetchDepartment = async () => {
+      try {
+        setIsLoading(true)
+        const data = await departmentService.getDepartmentById(params.id)
+
+        setFormData({
+          id: data.id,
+          name: data.name,
+          code: data.code,
+          description: data.description ?? "",
+        })
+
+        setModules(data.modules ?? [])
+      } catch (err: any) {
+        setError(
+          err?.response?.data?.message ||
+          "Erreur lors du chargement du département"
+        )
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchDepartment()
+  }, [params.id])
+
 
   const addModule = () => {
     if (currentModule.name && currentModule.code) {
       setModules([
         ...modules,
         {
-          id: Date.now().toString(),
+          id: currentModule.id,
           name: currentModule.name,
           code: currentModule.code,
+          semestre: currentModule.semestre,
           courses: [],
         },
       ])
-      setCurrentModule({ name: "", code: "" })
+      setCurrentModule({ id: "", name: "", code: "", semestre: "" })
       setShowModuleForm(false)
     }
   }
@@ -83,17 +93,16 @@ export default function EditDepartmentPage({ params }: { params: { id: string } 
         modules.map((module) =>
           module.id === moduleId
             ? {
-                ...module,
-                courses: [
-                  ...module.courses,
-                  {
-                    id: Date.now().toString(),
-                    name: currentCourse.name,
-                    code: currentCourse.code,
-                    credits: Number.parseInt(currentCourse.credits),
-                  },
-                ],
-              }
+              ...module,
+              courses: [
+                ...module.courses,
+                {
+                  name: currentCourse.name,
+                  code: currentCourse.code,
+                  credits: Number.parseInt(currentCourse.credits),
+                },
+              ],
+            }
             : module,
         ),
       )
@@ -107,18 +116,52 @@ export default function EditDepartmentPage({ params }: { params: { id: string } 
       modules.map((module) =>
         module.id === moduleId
           ? {
-              ...module,
-              courses: module.courses.filter((c) => c.id !== courseId),
-            }
+            ...module,
+            courses: module.courses?.filter((c) => c.id !== courseId),
+          }
           : module,
       ),
     )
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log("[v0] Updated department data:", { ...formData, modules })
+
+    try {
+      setIsSaving(true)
+
+      await departmentService.updateDepartment(params.id, {
+        ...formData,
+        modules,
+      })
+
+      // Optionnel : notification
+      toast.success("Département mis à jour avec succès", { position: "top-center" })
+      router.push("/admin/department")
+
+    } catch (err: any) {
+      setError(
+        err?.response?.data?.message ||
+        "Erreur lors de la mise à jour du département"
+      )
+      toast.error("Erreur lors de la mise à jour du département", { position: "top-center" })
+    } finally {
+      setIsSaving(false)
+    }
   }
+
+  if (isLoading) {
+    return <div className="p-8">Chargement du département...</div>
+  }
+
+  if (error) {
+    return (
+      <div className="p-8 text-red-600">
+        {error}
+      </div>
+    )
+  }
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -174,32 +217,7 @@ export default function EditDepartmentPage({ params }: { params: { id: string } 
             </div>
           </div>
 
-          {/* Administration */}
-          <div className="rounded-lg border bg-card p-6">
-            <h2 className="mb-4 flex items-center gap-2 text-lg font-medium">
-              <Users className="h-5 w-5 text-primary" />
-              Administration
-            </h2>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <Label htmlFor="director">Directeur</Label>
-                <Input
-                  id="director"
-                  value={formData.director}
-                  onChange={(e) => setFormData({ ...formData, director: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="budget">Budget annuel (€)</Label>
-                <Input
-                  id="budget"
-                  type="number"
-                  value={formData.budget}
-                  onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
-                />
-              </div>
-            </div>
-          </div>
+
 
           {/* Modules et Cours */}
           <div className="rounded-lg border bg-card p-6">
@@ -246,7 +264,7 @@ export default function EditDepartmentPage({ params }: { params: { id: string } 
                     variant="ghost"
                     onClick={() => {
                       setShowModuleForm(false)
-                      setCurrentModule({ name: "", code: "" })
+                      setCurrentModule({ id: "", name: "", code: "", semestre: "" })
                     }}
                   >
                     Annuler
@@ -269,7 +287,7 @@ export default function EditDepartmentPage({ params }: { params: { id: string } 
                   </div>
 
                   <div className="ml-4 space-y-2">
-                    {module.courses.map((course) => (
+                    {module.courses?.map((course) => (
                       <div
                         key={course.id}
                         className="flex items-center justify-between rounded-md bg-background px-3 py-2"
@@ -356,9 +374,10 @@ export default function EditDepartmentPage({ params }: { params: { id: string } 
                 Annuler
               </Button>
             </Link>
-            <Button type="submit" className="flex-1">
-              Enregistrer les modifications
+            <Button type="submit" className="flex-1" disabled={isSaving}>
+              {isSaving ? "Enregistrement..." : "Enregistrer les modifications"}
             </Button>
+
           </div>
         </form>
       </div>

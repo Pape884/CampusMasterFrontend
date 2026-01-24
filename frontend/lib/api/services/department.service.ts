@@ -18,7 +18,7 @@ class DepartmentService {
       // Vérifier le cache d'abord
       const cached = cacheManager.get(cacheKey);
       if (cached) {
-        console.log('📦 Départements récupérés du cache');
+        console.log('📦 Départements récupérés du cache: ', cached);
         return cached;
       }
 
@@ -27,7 +27,6 @@ class DepartmentService {
       
       if (filters.search) params.append('search', filters.search);
       if (filters.status && filters.status !== 'all') params.append('status', filters.status);
-      if (filters.batiment) params.append('batiment', filters.batiment);
       if (filters.page) params.append('page', filters.page.toString());
       if (filters.limit) params.append('limit', filters.limit.toString());
       if (filters.sortBy) params.append('sortBy', filters.sortBy);
@@ -45,7 +44,8 @@ class DepartmentService {
         },
       });
 
-      console.log(`📥 ${response.data.departments.length} départements récupérés`);
+      console.log(response.data)
+      //console.log(`📥 ${response.data.data.length} départements récupérés`);
       
       // Mettre en cache
       cacheManager.set(cacheKey, response.data);
@@ -80,7 +80,7 @@ class DepartmentService {
         },
       });
 
-      console.log(`✅ Département ${id} récupéré:`, response.data.nom);
+      console.log(`✅ Département ${id} récupéré:`, response.data.name);
       
       cacheManager.set(cacheKey, response.data);
       
@@ -97,14 +97,14 @@ class DepartmentService {
    */
   async createDepartment(departmentData: DepartmentCreateDto): Promise<Department> {
     try {
-      console.log('📝 Création d\'un nouveau département:', departmentData.nom);
+      console.log('📝 Création d\'un nouveau département:', departmentData.name);
       
       const response = await apiClient.post<Department>(this.basePath, departmentData);
       
       // Invalider le cache des listes
       this.invalidateDepartmentsCache();
       
-      console.log('✅ Département créé avec succès:', response.data.nom);
+      console.log('✅ Département créé avec succès:', response.data.name);
       
       return response.data;
       
@@ -143,14 +143,14 @@ class DepartmentService {
   /**
    * CHANGER LE STATUT D'UN DÉPARTEMENT
    */
-  async toggleDepartmentStatus(id: string, currentStatus: DepartmentStatus): Promise<Department> {
-    const newStatus: DepartmentStatus = currentStatus === 'actif' ? 'inactif' : 'actif';
-    
+  async toggleDepartmentStatus(id: string, currentStatus: boolean): Promise<Department> {
+    const isActive = !currentStatus;
+
     try {
-      console.log(`🔄 Changement statut département ${id}: ${currentStatus} → ${newStatus}`);
+      console.log(`🔄 Changement statut département ${id}: ${currentStatus} → ${isActive}`);
       
-      const response = await apiClient.patch<Department>(`${this.basePath}/${id}/status`, {
-        status: newStatus
+      const response = await apiClient.patch<Department>(`${this.basePath}/${id}`, {
+        isActive: isActive
       });
       
       // Mettre à jour le cache individuel
@@ -160,7 +160,7 @@ class DepartmentService {
       // Invalider le cache des listes
       this.invalidateDepartmentsCache();
       
-      console.log(`✅ Statut département ${id} changé à: ${newStatus}`);
+      console.log(`✅ Statut département ${id} changé à: ${isActive}`);
       
       return response.data;
       

@@ -4,7 +4,7 @@ import axios from 'axios';
 import { setupInterceptors } from './interceptors';
 
 // URLs selon l'environnement
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
 
 // Instance principale
 export const apiClient = axios.create({

@@ -1,18 +1,18 @@
 "use client"
 import DepartmentDetailsPage from "@/components/admin/departement/department-detail"
-import StudentDashboard from "@/components/dashboard/StudentDashboard"
-import TeacherDashboard from "@/components/dashboard/TeacherDashboard"
 import Layout from "@/components/layout/Layout"
-import { UserRole } from "@/components/layout/SidebarMenu"
 import Unauthorized from "@/components/ui/Unauthorized"
 import { useAuthContext } from "@/context/authContext"
-import { useState } from "react"
+import { useParams } from "next/navigation"
 
 
 export default function DepartmentDetail() {
 
-    const id = {id: '1'} // Remplacez par la récupération réelle des paramètres d'URL
+    const params = useParams()
+    const id = {id: params.id as string}
     const { user } = useAuthContext();
+          
+
           
     // Si pas d'utilisateur
     if (!user) {

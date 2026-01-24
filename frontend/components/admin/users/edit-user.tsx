@@ -8,13 +8,21 @@ import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ArrowLeft, Save, X } from "lucide-react"
 import Link from "next/link"
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { UserRole, UserUpdateDto } from "@/lib/api/services"
+import { useParams } from "next/navigation"
+import { userService } from "@/lib/api/services/user.service"
+import { toast } from "sonner"
 
-type UserRole = "Étudiant" | "Enseignant" | "Administrateur"
 
 export default function EditUserPage() {
-  const [userRole, setUserRole] = useState<UserRole>("Enseignant")
+  const [userRole, setUserRole] = useState<UserRole>()
   const [isActive, setIsActive] = useState(true)
+  const [loading, setLoading] = useState(true)
+  const [prenom, setPrenom] = useState("")
+  const [nom, setNom] = useState("")
+  const [email, setEmail] = useState("")
+  const [telephone, setTelephone] = useState("")
 
   const [selectedDepartments, setSelectedDepartments] = useState<string[]>(["math", "informatique"])
   const [selectedCourses, setSelectedCourses] = useState<string[]>(["math101", "math201"])
@@ -23,6 +31,34 @@ export default function EditUserPage() {
     gestionDepartements: true,
     gestionCours: true,
   })
+
+  const params = useParams()
+  const userId = params.id as string
+
+  useEffect(() => {
+    async function fetchUser() {
+      try {
+        const data = await userService.getUserById(userId)
+
+        setPrenom(data.prenom ?? "")
+        setNom(data.nom ?? "")
+        setEmail(data.email ?? "")
+        setTelephone(data.telephone ?? "")
+        setUserRole(data.role)
+        setIsActive(data.isActive ?? true)
+
+        // si étudiant / enseignant
+        setSelectedDepartments(data.departements ?? [])
+        setSelectedCourses(data.courses ?? [])
+      } catch (error) {
+        console.error(error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchUser()
+  }, [userId])
 
   const togglePermission = (key: keyof typeof permissions) => {
     setPermissions((prev) => ({ ...prev, [key]: !prev[key] }))
@@ -48,6 +84,23 @@ export default function EditUserPage() {
     setSelectedCourses(selectedCourses.filter((c) => c !== course))
   }
 
+  const handleSave = async () => {
+    const payload: UserUpdateDto = {
+      prenom,
+      nom,
+      email,
+      telephone,
+      role: userRole
+    }
+
+    try {
+      await userService.updateUser(userId, payload)
+      toast.success("Utilisateur mis à jour")
+    } catch (error) {
+      toast.error("Erreur lors de la mise à jour")
+    }
+  }
+
   const departementsList = [
     { value: "math", label: "Mathématiques" },
     { value: "sciences", label: "Sciences" },
@@ -64,11 +117,15 @@ export default function EditUserPage() {
     { value: "lang101", label: "Anglais Avancé" },
   ]
 
+  if (loading) {
+    return <div className="p-8">Chargement...</div>
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <div className="p-8 mx-auto">
         <Link
-          href="/user/USR-2024-001"
+          href="/admin/users"
           className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -81,7 +138,7 @@ export default function EditUserPage() {
             <p className="text-muted-foreground text-sm">Mettez à jour les informations</p>
           </div>
           <div className="flex gap-3">
-            <Link href="/user/USR-2024-001">
+            <Link href="/admin/users">
               <Button variant="outline">Annuler</Button>
             </Link>
             <Button className="gap-2">
@@ -96,13 +153,12 @@ export default function EditUserPage() {
           <Card className="p-6">
             <Label className="text-sm font-medium mb-3 block">Rôle de l'utilisateur</Label>
             <div className="grid grid-cols-3 gap-3">
-              {(["Étudiant", "Enseignant", "Administrateur"] as UserRole[]).map((role) => (
+              {(["STUDENT", "TEACHER", "ADMIN"] as UserRole[]).map((role) => (
                 <button
                   key={role}
                   onClick={() => setUserRole(role)}
-                  className={`p-4 rounded-lg border-2 transition-all text-center ${
-                    userRole === role ? "border-primary bg-primary/5" : "border-border hover:border-primary/50 bg-card"
-                  }`}
+                  className={`p-4 rounded-lg border-2 transition-all text-center ${userRole === role ? "border-primary bg-primary/5" : "border-border hover:border-primary/50 bg-card"
+                    }`}
                 >
                   <div className="font-medium text-foreground">{role}</div>
                 </button>
@@ -154,7 +210,7 @@ export default function EditUserPage() {
           </Card>
 
           {/* Section conditionnelle par rôle */}
-          {userRole === "Étudiant" && (
+          {userRole === "STUDENT" && (
             <>
               <Card className="p-6">
                 <h2 className="text-lg font-semibold text-foreground mb-4">Département</h2>
@@ -211,7 +267,7 @@ export default function EditUserPage() {
             </>
           )}
 
-          {userRole === "Enseignant" && (
+          {userRole === "TEACHER" && (
             <>
               <Card className="p-6">
                 <h2 className="text-lg font-semibold text-foreground mb-4">Départements</h2>
@@ -283,7 +339,7 @@ export default function EditUserPage() {
             </>
           )}
 
-          {userRole === "Administrateur" && (
+          {userRole === "ADMIN" && (
             <Card className="p-6">
               <h2 className="text-lg font-semibold text-foreground mb-4">Permissions</h2>
               <div className="space-y-3">

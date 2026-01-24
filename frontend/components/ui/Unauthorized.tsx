@@ -13,8 +13,8 @@ export default function Unauthorized() {
         </h2>
         
         <p className="text-gray-600 mb-6">
-          Vous n'avez pas les permissions nécessaires pour accéder à cette page.
-          Veuillez vous connecter avec un compte ayant les droits appropriés.
+          Votre Session a expiré.
+          Veuillez vous reconnecter .
         </p>
         
         <div className="space-y-3">
@@ -23,12 +23,6 @@ export default function Unauthorized() {
             className="block w-full py-3 px-4 bg-primary text-white rounded-lg font-medium hover:bg-primary/90"
           >
             Se connecter
-          </a>
-          <a 
-            href="/" 
-            className="block w-full py-3 px-4 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200"
-          >
-            Retour à l'accueil
           </a>
         </div>
       </div>

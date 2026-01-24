@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { StatsCards } from "@/components/cards/state-card"
 import { UserRole } from "@/components/layout/SidebarMenu"
 import {UsersTable} from "@/components/admin/users/userList"
 import Layout from "@/components/layout/Layout"
@@ -25,7 +24,6 @@ export default function UsersPage(){
 
   return (
        <Layout userRole={user.role} title="Gestion des utilisateurs">
-            <StatsCards />
             <br />
             <UsersTable />
         </Layout>

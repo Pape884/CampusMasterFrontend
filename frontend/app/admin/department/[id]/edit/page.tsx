@@ -6,18 +6,20 @@ import Layout from "@/components/layout/Layout"
 import { UserRole } from "@/components/layout/SidebarMenu"
 import Unauthorized from "@/components/ui/Unauthorized"
 import { useAuthContext } from "@/context/authContext"
+import { useParams } from "next/navigation"
 import { useState } from "react"
 
 
-export default function EditDepartment(){
+export default function EditDepartment() {
     const { user } = useAuthContext();
-          
+
     // Si pas d'utilisateur
     if (!user) {
-    return <Unauthorized />;
+        return <Unauthorized />;
     }
-        const id = {id: '1'} // Remplacez par la récupération réelle des paramètres d'URL
-    
+    const params = useParams()
+    const id = { id: params.id as string }
+
 
     return (
         <Layout userRole={user.role} title="Gestion des Départements">

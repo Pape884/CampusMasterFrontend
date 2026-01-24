@@ -4,9 +4,9 @@ export type UserStatus = "actif" | "inactif";
  * Interface pour les credentials de connexion
  */
 export interface LoginCredentials {
-    email: string;          // Email de l'utilisateur
-    password: string;       // Mot de passe
-    rememberMe?: boolean;   // Option "se souvenir de moi"
+  email: string;          // Email de l'utilisateur
+  password: string;       // Mot de passe
+  rememberMe?: boolean;   // Option "se souvenir de moi"
 }
 
 
@@ -36,25 +36,27 @@ export interface AuthResponse {
  * Réponse pour le refresh token
  */
 export interface RefreshTokenResponse {
-    access_token: string;   // Nouveau token d'accès
-    refresh_token: string;  // Nouveau token de rafraîchissement
-    expires_in: number;     // Nouvelle durée de validité
+  access_token: string;   // Nouveau token d'accès
+  refresh_token: string;  // Nouveau token de rafraîchissement
+  expires_in: number;     // Nouvelle durée de validité
 }
 
 /**
  * Interface de l'utilisateur
  */
 export interface User {
-    id: string;             // Identifiant unique
-    matricule?: string;     // Matricule
-    email: string;          // Email
-    prenom?: string;     // Prénom
-    nom?: string;      // Nom
-    role: UserRole;        // Rôles (ADMIN, USER, etc.)
-    permissions?: string[];  // Permissions spécifiques
-    isActive: boolean;      // Compte actif
-    lastLogin?: string;     // Dernière connexion
-    createdAt?: string;      // Date de création
+  id: string;             // Identifiant unique
+  matricule?: string;     // Matricule
+  email: string;          // Email
+  prenom?: string;     // Prénom
+  nom?: string;      // Nom
+  telephone?: string;   // Téléphone
+  role: UserRole;        // Rôles (ADMIN, USER, etc.)
+  departements?: string[]; // Départements
+  courses?: string[];
+  isActive: boolean;      // Compte actif
+  lastLogin?: string;     // Dernière connexion
+  createdAt?: string;      // Date de création
 }
 
 export interface UserCreateDto {
@@ -74,22 +76,40 @@ export interface UserUpdateDto {
   email?: string;
   role?: UserRole;
   status?: UserStatus;
-  phone?: string;
-  adresse?: string;
-  photo?: string;
+  telephone?: string;
 }
 
 export interface UserStats {
-  total: number;
-  admins: number;
-  enseignants: number;
-  etudiants: number;
+  totalUsers: number;
+  adminsCount: number;
+  teachersCount: number;
+  studentsCount: number;
   actifs: number;
   inactifs: number;
 }
+/*
 
+// forme des donnees recuperer dans le backend
+{
+  "data": [],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total": 2,
+    "totalPages": 1
+  },
+  "stats": {
+    "totalUsers": 2,
+    "activeUsers": 2,
+    "inactiveUsers": 0,
+    "studentsCount": 0,
+    "teachersCount": 0,
+    "adminsCount": 2
+  }
+}
+*/
 export interface UsersResponse {
-  users: User[];
+  data: User[];
   pagination: {
     page: number;
     limit: number;
@@ -103,72 +123,64 @@ export interface UsersResponse {
 /**
  * les types et structures liés aux departements
  * 
- */   
+ */
 
-export type DepartmentStatus = 'actif' | 'inactif' ;
+export interface Course {
+  id: string
+  name: string
+  code: string
+  credits: number
+  students: number
+  instructor: string
+}
+
+export interface Module {
+  id: string
+  name: string
+  code: string
+  semestre: string
+  courses?: Course[]
+}
+
+export type DepartmentStatus = 'actif' | 'inactif';
 
 export interface Department {
+  couleur: any;
+  isActive: boolean;
   id: string;
   code: string;
-  nom: string;
-  description?: string;
-  directeur: string; // ID ou nom du directeur
-  directeurNom?: string; // Nom complet du directeur
-  email: string;
-  telephone?: string;
-  batiment: string;
-  etage?: number;
-  performance: number; // 0-100
-  enseignantsCount: number;
-  etudiantsCount: number;
+  name: string;
+  description: string;
+  teachersCount: number;
+  studentsCount: number;
   modulesCount: number;
-  budgetAnnuel: number;
-  status: DepartmentStatus;
-  dateCreation: string;
-  dateModification?: string;
-  couleur?: string;
-  logo?: string;
+  coursesCount: number;
+  modules?: Module[];
 }
 
 export interface DepartmentCreateDto {
   code: string;
-  nom: string;
+  name: string;
   description?: string;
-  directeur: string; // ID du directeur
-  email: string;
-  telephone?: string;
-  batiment: string;
-  etage?: number;
-  budgetAnnuel: number;
-  couleur?: string;
+  modules?: Module[];
 }
 
 export interface DepartmentUpdateDto {
-  nom?: string;
+  code?: string;
+  name?: string;
   description?: string;
-  directeur?: string;
-  email?: string;
-  telephone?: string;
-  batiment?: string;
-  etage?: number;
-  budgetAnnuel?: number;
-  status?: DepartmentStatus;
-  couleur?: string;
-  logo?: string;
+  modules?: Module[];
 }
 
 export interface DepartmentStats {
-  total: number;
-  actifs: number;
-  inactifs: number;
-  totalEnseignants: number;
-  totalEtudiants: number;
-  totalModules: number;
-  budgetTotal: number;
+  totalDepartments: number;
+  activeDepartments: number;
+  inactiveDepartments: number;
+  totalModules: number
 }
 
 export interface DepartmentsResponse {
-  departments: Department[];
+  data: Department[];
   pagination: {
     page: number;
     limit: number;
@@ -181,7 +193,6 @@ export interface DepartmentsResponse {
 export interface DepartmentFilters {
   search?: string;
   status?: DepartmentStatus | 'all';
-  batiment?: string;
   page?: number;
   limit?: number;
   sortBy?: string;

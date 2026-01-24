@@ -14,12 +14,12 @@
 import { apiClient } from '../axios/client';
 import apiClientNoCache from "../axios/client"
 import { cacheManager } from '../axios/cache';
-import { LoginCredentials, AuthResponse, RegisterData, RefreshTokenResponse, User } from '.';
+import { LoginCredentials, AuthResponse, RefreshTokenResponse, User } from '.';
 
 
 class AuthService {
     // Chemins de l'API Spring Boot
-    private basePath = '/auth';
+    private basePath = '/v1/auth';
 
     // Clés de stockage localStorage
     private tokenKey = 'auth_token';           // Token JWT
@@ -91,7 +91,7 @@ class AuthService {
      * @param data - Données d'inscription
      * @returns Promise avec les données d'authentification
      */
-    async register(data: RegisterData): Promise<AuthResponse> {
+    /*async register(data: RegisterData): Promise<AuthResponse> {
         try {
             console.log('📝 Tentative d\'inscription pour:', data.email);
 
@@ -245,7 +245,7 @@ class AuthService {
 
             // Appel à l'API Spring Boot (GET /auth/me)
             const response = await apiClient.get<{ user: User }>(
-                `${this.basePath}/me`,
+                `users/me`,
                 {
                     headers: {
                         'Authorization': `Bearer ${token}`,

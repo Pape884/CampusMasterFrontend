@@ -81,6 +81,9 @@ class CacheManager {
         for (const key of this.cache.keys()) {
             if (key.startsWith(prefix)) {
                 this.cache.delete(key);
+                sessionStorage.removeItem(`cache_${key}`);
+                console.log("cahe nettoyer")
+
             }
         }
 

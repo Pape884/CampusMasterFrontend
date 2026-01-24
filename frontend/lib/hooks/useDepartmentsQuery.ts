@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { cacheManager } from '@/lib/api/axios/cache';
 import { DepartmentFilters, DepartmentsResponse } from '../api/services';
 import { departmentService } from '../api/services/department.service';
@@ -26,50 +26,52 @@ export function useDepartmentsQuery(options: UseDepartmentsQueryOptions = {}) {
   const [error, setError] = useState<Error | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  //memoriser le filtre
+  const memoizedFilters = useMemo(() => ({
+    search: filters.search,
+    status: filters.status,
+    page: filters.page,
+    limit: filters.limit,
+    sortBy: filters.sortBy,
+    sortOrder: filters.sortOrder,
+  }), [
+    filters.search,
+    filters.status,
+    filters.page,
+    filters.limit,
+    filters.sortBy,
+    filters.sortOrder,
+  ]);
+
+
   const fetchDepartments = useCallback(async (isRefresh = false) => {
     if (!enabled) return;
 
-    if (isRefresh) {
-      setIsRefreshing(true);
-    } else {
-      setIsLoading(true);
-    }
-    
-    setError(null);
+    setIsLoading(!isRefresh);
+    setIsRefreshing(isRefresh);
 
     try {
-      const result = await departmentService.getDepartments(filters);
-      
+      const result = await departmentService.getDepartments(memoizedFilters);
       setData(result);
-      
-      if (onSuccess) {
-        onSuccess(result);
-      }
-      
-      console.log(`✅ ${result.departments.length} départements chargés`);
-      
-      return result;
-    } catch (err: any) {
-      const error = err instanceof Error ? err : new Error('Erreur de chargement');
+      onSuccess?.(result);
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error("Erreur");
       setError(error);
-      
-      if (onError) {
-        onError(error);
-      }
-      
-      throw error;
+      onError?.(error);
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [enabled, filters, onSuccess, onError]);
+  }, [enabled, memoizedFilters, onSuccess, onError]);
+
 
   // Chargement initial
   useEffect(() => {
     if (refetchOnMount && enabled) {
       fetchDepartments();
     }
-  }, [fetchDepartments, refetchOnMount, enabled]);
+  }, [fetchDepartments]);
+
 
   // Rafraîchir avec les mêmes filtres
   const refetch = useCallback(() => {
@@ -81,6 +83,7 @@ export function useDepartmentsQuery(options: UseDepartmentsQueryOptions = {}) {
     cacheManager.deleteByPrefix('departments:');
     return fetchDepartments(true);
   }, [fetchDepartments]);
+
 
   return {
     data,

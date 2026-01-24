@@ -40,7 +40,7 @@ export function UsersTable() {
   const [searchQuery, setSearchQuery] = useState("")
   const [roleFilter, setRoleFilter] = useState<string>("tous")
   const [statusFilter, setStatusFilter] = useState<string>("tous")
-  const [page, setPage] = useState(1)
+  const [page, setPage] = useState(0)
   const limit = 10
 
   // Utiliser le hook pour récupérer les utilisateurs
@@ -61,7 +61,7 @@ export function UsersTable() {
     sortOrder: "desc",
     enabled: true,
     onSuccess: (data) => {
-      console.log(`✅ ${data.users.length} utilisateurs chargés (page ${data.pagination.page})`)
+      console.log(`✅ ${data.data.length} utilisateurs chargés (page ${data.pagination.page})`)
     },
     onError: (error) => {
       toast.error("Erreur de chargement", {
@@ -142,28 +142,28 @@ export function UsersTable() {
   const stats = [
     {
       title: "Total Utilisateurs",
-      value: usersData?.stats?.total?.toString() || "0",
+      value: usersData?.stats?.totalUsers?.toString() || "0",
       icon: Users,
       description: "+12% ce mois",
       gradient: "from-blue-500 to-blue-600",
     },
     {
       title: "Administrateurs",
-      value: usersData?.stats?.admins?.toString() || "0",
+      value: usersData?.stats?.adminsCount?.toString() || "0",
       icon: Shield,
       description: "+2 nouveaux",
       gradient: "from-purple-500 to-purple-600",
     },
     {
       title: "Enseignants",
-      value: usersData?.stats?.enseignants?.toString() || "0",
+      value: usersData?.stats?.teachersCount?.toString() || "0",
       icon: BookOpen,
       description: "+5 nouveaux",
       gradient: "from-green-500 to-green-600",
     },
     {
       title: "Étudiants",
-      value: usersData?.stats?.etudiants?.toString() || "0",
+      value: usersData?.stats?.studentsCount?.toString() || "0",
       icon: GraduationCap,
       description: "+15 nouveaux",
       gradient: "from-orange-500 to-orange-600",
@@ -176,37 +176,6 @@ export function UsersTable() {
 
   return (
     <>
-      {/* En-tête avec boutons d'action */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Gestion des Utilisateurs</h1>
-          <p className="text-muted-foreground">
-            Gérez tous les utilisateurs de la plateforme
-          </p>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            onClick={invalidateAndRefetch}
-            disabled={isLoading || isRefreshing}
-          >
-            {isRefreshing ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <RefreshCw className="h-4 w-4 mr-2" />
-            )}
-            Actualiser
-          </Button>
-          
-          <Link href="/ADMIN/user/add">
-            <Button>
-              <UserPlus className="w-4 h-4 mr-2" />
-              Ajouter un utilisateur
-            </Button>
-          </Link>
-        </div>
-      </div>
 
       {/* Affichage des erreurs */}
       {error && (
@@ -229,6 +198,31 @@ export function UsersTable() {
       {/* Statistiques */}
       <div className="mb-6">
         <StatsCard stats={stats} />
+      </div>
+      {/* En-tête avec boutons d'action */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <div></div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={invalidateAndRefetch}
+            disabled={isLoading || isRefreshing}
+          >
+            {isRefreshing ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4 mr-2" />
+            )}
+            Actualiser
+          </Button>
+          
+          <Link href="/admin/user/add">
+            <Button>
+              <UserPlus className="w-4 h-4 mr-2" />
+              Ajouter un utilisateur
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Carte principale */}
@@ -303,7 +297,7 @@ export function UsersTable() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {usersData?.users.length === 0 ? (
+                    {usersData?.data.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                           <div className="flex flex-col items-center gap-2">
@@ -322,7 +316,7 @@ export function UsersTable() {
                         </TableCell>
                       </TableRow>
                     ) : (
-                      usersData?.users.map((user: User) => {
+                      usersData?.data.map((user: User) => {
                         const roleBadge = getRoleBadge(user.role)
                         return (
                           <TableRow key={user.id}>
@@ -356,13 +350,13 @@ export function UsersTable() {
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                   <DropdownMenuItem>
-                                    <Link href={`/ADMIN/users/${user.id}`} className="flex items-center w-full">
+                                    <Link href={`/admin/users/${user.id}`} className="flex items-center w-full">
                                       <Eye className="w-4 h-4 mr-2" />
                                       Détails
                                     </Link>
                                   </DropdownMenuItem>
                                   <DropdownMenuItem>
-                                    <Link href={`/ADMIN/users/${user.id}/edit`} className="flex items-center w-full">
+                                    <Link href={`/admin/users/${user.id}/edit`} className="flex items-center w-full">
                                       <Edit className="w-4 h-4 mr-2" />
                                       Modifier
                                     </Link>
@@ -391,7 +385,7 @@ export function UsersTable() {
               <div className="text-sm text-muted-foreground">
                 {usersData ? (
                   <>
-                    Affichage de {usersData.users.length} sur {usersData.pagination.total} utilisateurs
+                    Affichage de {usersData.data.length} sur {usersData.pagination.total} utilisateurs
                     {searchQuery && ` pour "${searchQuery}"`}
                   </>
                 ) : (

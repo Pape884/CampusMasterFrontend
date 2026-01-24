@@ -3,41 +3,33 @@
 import type React from "react"
 
 import { useState } from "react"
-import { ArrowLeft, Plus, X, Building2, Users, BookOpen, GraduationCap } from "lucide-react"
+import { ArrowLeft, Plus, X, Building2, BookOpen } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { departmentService } from "@/lib/api/services/department.service"
+import { toast } from "sonner"
+import { useRouter } from "next/navigation"
+import { Module } from "@/lib/api/services"
 
-interface Module {
-  id: string
-  name: string
-  code: string
-  courses: Course[]
-}
 
-interface Course {
-  id: string
-  name: string
-  code: string
-  credits: number
-}
 
 export default function AddDepartmentPage() {
   const [formData, setFormData] = useState({
     name: "",
     code: "",
     description: "",
-    director: "",
-    budget: "",
   })
+
+  const router = useRouter();
 
   const [modules, setModules] = useState<Module[]>([])
   const [showModuleForm, setShowModuleForm] = useState(false)
-  const [currentModule, setCurrentModule] = useState({ name: "", code: "" })
-  const [currentCourse, setCurrentCourse] = useState({ name: "", code: "", credits: "" })
-  const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null)
+  const [currentModule, setCurrentModule] = useState({ name: "", code: "", semestre: "" })
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const addModule = () => {
     if (currentModule.name && currentModule.code) {
@@ -47,10 +39,10 @@ export default function AddDepartmentPage() {
           id: Date.now().toString(),
           name: currentModule.name,
           code: currentModule.code,
-          courses: [],
+          semestre: currentModule.semestre,
         },
       ])
-      setCurrentModule({ name: "", code: "" })
+      setCurrentModule({ name: "", code: "", semestre: "" })
       setShowModuleForm(false)
     }
   }
@@ -59,7 +51,7 @@ export default function AddDepartmentPage() {
     setModules(modules.filter((m) => m.id !== id))
   }
 
-  const addCourse = (moduleId: string) => {
+  /*const addCourse = (moduleId: string) => {
     if (currentCourse.name && currentCourse.code && currentCourse.credits) {
       setModules(
         modules.map((module) =>
@@ -82,9 +74,9 @@ export default function AddDepartmentPage() {
       setCurrentCourse({ name: "", code: "", credits: "" })
       setSelectedModuleId(null)
     }
-  }
+  }*/
 
-  const removeCourse = (moduleId: string, courseId: string) => {
+  /*const removeCourse = (moduleId: string, courseId: string) => {
     setModules(
       modules.map((module) =>
         module.id === moduleId
@@ -95,12 +87,48 @@ export default function AddDepartmentPage() {
           : module,
       ),
     )
+  }*/
+
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    setErrorMessage(null)
+    setIsSubmitting(true)
+
+    try {
+      console.log("[v0] Department data:", { ...formData, modules })
+
+      await departmentService.createDepartment({
+        ...formData,
+        modules,
+      })
+
+      toast.success("Département créé avec succès ✅")
+
+      // optionnel : reset formulaire ou redirection
+      router.push("/admin/departments")
+
+    } catch (error: any) {
+      console.error("❌ Erreur création département:", error)
+
+      // Erreur venant de l’API
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Une erreur est survenue lors de la création du département"
+
+      setErrorMessage(message)
+
+      toast.error("Erreur", {
+        description: message,
+      })
+
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    console.log("[v0] Department data:", { ...formData, modules })
-  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -112,9 +140,15 @@ export default function AddDepartmentPage() {
               <ArrowLeft className="h-5 w-5" />
             </Button>
           </Link>
-            <p className="text-m-foreground">Retour</p>
-          
+          <p className="text-m-foreground">Retour</p>
+
         </div>
+
+        {errorMessage && (
+          <div className="p-3 rounded-md bg-red-50 text-red-700 text-sm border border-red-200">
+            {errorMessage}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="mx-auto space-y-6">
           {/* Informations de base */}
@@ -157,34 +191,6 @@ export default function AddDepartmentPage() {
             </div>
           </div>
 
-          {/* Directeur et Budget */}
-          <div className="rounded-lg border bg-card p-6">
-            <h2 className="mb-4 flex items-center gap-2 text-lg font-medium">
-              <Users className="h-5 w-5 text-primary" />
-              Administration
-            </h2>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <Label htmlFor="director">Directeur</Label>
-                <Input
-                  id="director"
-                  value={formData.director}
-                  onChange={(e) => setFormData({ ...formData, director: e.target.value })}
-                  placeholder="Dr. Marie Dubois"
-                />
-              </div>
-              <div>
-                <Label htmlFor="budget">Budget annuel (€)</Label>
-                <Input
-                  id="budget"
-                  type="number"
-                  value={formData.budget}
-                  onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
-                  placeholder="450000"
-                />
-              </div>
-            </div>
-          </div>
 
           {/* Modules et Cours */}
           <div className="rounded-lg border bg-card p-6">
@@ -221,6 +227,15 @@ export default function AddDepartmentPage() {
                       placeholder="ALG101"
                     />
                   </div>
+                  <div>
+                    <Label htmlFor="moduleSemestre">Semestre</Label>
+                    <Input
+                      id="moduleSemestre"
+                      value={currentModule.semestre}
+                      onChange={(e) => setCurrentModule({ ...currentModule, semestre: e.target.value })}
+                      placeholder="Semestre 1"
+                    />
+                  </div>
                 </div>
                 <div className="flex gap-2">
                   <Button type="button" size="sm" onClick={addModule}>
@@ -232,7 +247,7 @@ export default function AddDepartmentPage() {
                     variant="ghost"
                     onClick={() => {
                       setShowModuleForm(false)
-                      setCurrentModule({ name: "", code: "" })
+                      setCurrentModule({ name: "", code: "", semestre: "" })
                     }}
                   >
                     Annuler
@@ -247,91 +262,13 @@ export default function AddDepartmentPage() {
                 <div key={module.id} className="rounded-lg border bg-muted/30 p-4">
                   <div className="mb-3 flex items-start justify-between">
                     <div>
-                      <h3 className="font-medium">{module.name}</h3>
-                      <p className="text-sm text-muted-foreground">{module.code}</p>
+                      <h3 className="font-medium">{module.name} ({module.code})</h3>
+                      <p className="text-sm text-muted-foreground">{module.semestre}</p>
+
                     </div>
                     <Button type="button" variant="ghost" size="icon" onClick={() => removeModule(module.id)}>
                       <X className="h-4 w-4" />
                     </Button>
-                  </div>
-
-                  {/* Cours du module */}
-                  <div className="ml-4 space-y-2">
-                    {module.courses.map((course) => (
-                      <div
-                        key={course.id}
-                        className="flex items-center justify-between rounded-md bg-background px-3 py-2"
-                      >
-                        <div className="flex items-center gap-2">
-                          <GraduationCap className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">{course.name}</span>
-                          <span className="text-xs text-muted-foreground">({course.code})</span>
-                          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
-                            {course.credits} crédits
-                          </span>
-                        </div>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7"
-                          onClick={() => removeCourse(module.id, course.id)}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    ))}
-
-                    {/* Formulaire d'ajout de cours */}
-                    {selectedModuleId === module.id ? (
-                      <div className="rounded-md border border-dashed bg-background p-3">
-                        <div className="mb-2 grid gap-2 md:grid-cols-3">
-                          <Input
-                            placeholder="Nom du cours"
-                            value={currentCourse.name}
-                            onChange={(e) => setCurrentCourse({ ...currentCourse, name: e.target.value })}
-                          />
-                          <Input
-                            placeholder="Code"
-                            value={currentCourse.code}
-                            onChange={(e) => setCurrentCourse({ ...currentCourse, code: e.target.value })}
-                          />
-                          <Input
-                            type="number"
-                            placeholder="Crédits"
-                            value={currentCourse.credits}
-                            onChange={(e) => setCurrentCourse({ ...currentCourse, credits: e.target.value })}
-                          />
-                        </div>
-                        <div className="flex gap-2">
-                          <Button type="button" size="sm" variant="secondary" onClick={() => addCourse(module.id)}>
-                            Ajouter
-                          </Button>
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => {
-                              setSelectedModuleId(null)
-                              setCurrentCourse({ name: "", code: "", credits: "" })
-                            }}
-                          >
-                            Annuler
-                          </Button>
-                        </div>
-                      </div>
-                    ) : (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="w-full"
-                        onClick={() => setSelectedModuleId(module.id)}
-                      >
-                        <Plus className="mr-2 h-3 w-3" />
-                        Ajouter un cours
-                      </Button>
-                    )}
                   </div>
                 </div>
               ))}
@@ -351,10 +288,10 @@ export default function AddDepartmentPage() {
                 Annuler
               </Button>
             </Link>
-            <Button type="submit" className="flex-1">
-              Créer le département
+            <Button type="submit" disabled={isSubmitting} className="flex-1">
+              {isSubmitting ? "Enregistrement..." : "Enregistrer"}
             </Button>
-            
+
           </div>
         </form>
       </div>
