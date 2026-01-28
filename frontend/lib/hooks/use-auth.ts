@@ -8,7 +8,7 @@ export function useAuth() {
 
     login: authService.login.bind(authService),
     logout: authService.logout.bind(authService),
-    register: authService.register.bind(authService),
+    //register: authService.register.bind(authService),
 
     refreshToken: authService.refreshToken.bind(authService),
     getCurrentUser: authService.getCurrentUser.bind(authService),

@@ -40,6 +40,7 @@ export default function AddDepartmentPage() {
           name: currentModule.name,
           code: currentModule.code,
           semestre: currentModule.semestre,
+          departmentId: ""
         },
       ])
       setCurrentModule({ name: "", code: "", semestre: "" })
@@ -107,7 +108,7 @@ export default function AddDepartmentPage() {
       toast.success("Département créé avec succès ✅")
 
       // optionnel : reset formulaire ou redirection
-      router.push("/admin/departments")
+      router.push("/admin/department")
 
     } catch (error: any) {
       console.error("❌ Erreur création département:", error)

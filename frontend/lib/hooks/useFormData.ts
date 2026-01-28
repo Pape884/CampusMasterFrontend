@@ -2,23 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { departmentService } from '@/lib/api/services/department.service';
+import { Department, Module } from '../api/services';
+import { moduleService } from '../api/services/module.service';
 
-export interface Department {
-  id: string;
-  code: string;
-  name: string;
-}
-
-export interface Course {
-  id: string;
-  code: string;
-  nom: string;
-  departmentId?: string;
-}
 
 export interface FormDataState {
   departments: Department[];
-  courses: Course[];
+  modules: Module[];
   isLoading: boolean;
   error: string | null;
 }
@@ -26,7 +16,7 @@ export interface FormDataState {
 export function useFormData() {
   const [state, setState] = useState<FormDataState>({
     departments: [],
-    courses: [],
+    modules: [],
     isLoading: true,
     error: null,
   });
@@ -42,23 +32,16 @@ export function useFormData() {
           limit: 100,
         });
 
+        console.log("Departments:", departmentsResponse.data);
+
         // Récupérer les cours
-       /* const coursesResponse = await coursesService.getCourses({
-            status: 'actif',
-            limit: 100,
-        });*/
-        // Note: Tu devras créer un service cours ou adapter selon ton API
-        const mockCourses: Course[] = [
-          { id: '1', code: 'MATH101', nom: 'Algèbre Linéaire', departmentId: '1' },
-          { id: '2', code: 'MATH201', nom: 'Analyse Numérique', departmentId: '1' },
-          { id: '3', code: 'PHYS101', nom: 'Physique Quantique', departmentId: '2' },
-          { id: '4', code: 'INFO101', nom: 'Programmation Python', departmentId: '5' },
-          { id: '5', code: 'LANG101', nom: 'Anglais Avancé', departmentId: '3' },
-        ];
+        const modulesResponse = await moduleService.getAll();
+        console.log("Modules:", modulesResponse);
+    
 
         setState({
           departments: departmentsResponse.data,
-          courses: mockCourses,
+          modules: modulesResponse,
           isLoading: false,
           error: null,
         });
@@ -76,9 +59,9 @@ export function useFormData() {
     fetchData();
   }, []);
 
-  // Filtrer les cours par département
-  const getCoursesByDepartment = (departmentId: string): Course[] => {
-    return state.courses.filter(course => course.departmentId === departmentId);
+  // Filtrer les modules par département
+  const getModuleByDepartment = (departmentId: string): Module[] => {
+    return state.modules.filter(module => module.departmentId === departmentId);
   };
 
   // Obtenir le nom d'un département par son ID
@@ -87,16 +70,10 @@ export function useFormData() {
     return dept?.name || departmentId;
   };
 
-  // Obtenir le nom d'un cours par son ID
-  const getCourseName = (courseId: string): string => {
-    const course = state.courses.find(c => c.id === courseId);
-    return course?.nom || courseId;
-  };
 
   return {
     ...state,
-    getCoursesByDepartment,
+    getModuleByDepartment,
     getDepartmentName,
-    getCourseName,
   };
 }

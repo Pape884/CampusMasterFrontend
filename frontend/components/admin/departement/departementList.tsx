@@ -80,27 +80,6 @@ export default function DepartmentCards() {
 
 
 
-  // Fonction pour supprimer un département
-  const handleDeleteDepartment = async (departmentId: string, departmentName: string) => {
-
-
-    /* try {
-       await departmentService.deleteDepartment(departmentId)
- 
-       toast.success("Département supprimé", {
-         description: "Le département a été supprimé avec succès"
-       })
- 
-       // Recharger les données
-       await refetch()
- 
-     } catch (error: any) {
-       toast.error("Erreur", {
-         description: error.message || "Impossible de supprimer le département"
-       })
-     }*/
-  }
-
   // Fonction pour changer le statut d'un département
   const handleToggleStatus = async (departmentId: string, currentStatus: boolean) => {
     try {

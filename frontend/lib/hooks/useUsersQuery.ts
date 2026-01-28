@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { userService, UserFilters } from '@/lib/api/services/user.service';
+import { userService } from '@/lib/api/services/user.service';
 import { cacheManager } from '@/lib/api/axios/cache';
-import { UsersResponse } from '../api/services';
+import { UserFilters, UsersResponse } from '../api/services';
 
 interface UseUsersQueryOptions extends UserFilters {
   enabled?: boolean;

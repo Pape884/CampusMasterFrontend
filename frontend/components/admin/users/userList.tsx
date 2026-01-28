@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
@@ -10,16 +9,16 @@ import { Switch } from "@/components/ui/switch"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { 
-  Search, 
-  MoreVertical, 
-  Eye, 
-  Edit, 
-  Trash2, 
-  UserPlus, 
-  BookOpen, 
-  GraduationCap, 
-  Shield, 
+import {
+  Search,
+  MoreVertical,
+  Eye,
+  Edit,
+  Trash2,
+  UserPlus,
+  BookOpen,
+  GraduationCap,
+  Shield,
   Users,
   Loader2,
   AlertCircle,
@@ -32,10 +31,16 @@ import { userService } from "@/lib/api/services/user.service"
 import { toast } from "sonner"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { UserRole, UserStatus, User } from "@/lib/api/services"
+import { ConfirmDeleteDialog } from "@/components/shared/ConfirmDeleteDialog"
 
 export function UsersTable() {
-  const router = useRouter()
-  
+
+
+  const [selectedUser, setSelectedUser] = useState<User | null>(null)
+  const [openDelete, setOpenDelete] = useState(false)
+
+
+
   // États pour les filtres
   const [searchQuery, setSearchQuery] = useState("")
   const [roleFilter, setRoleFilter] = useState<string>("tous")
@@ -71,17 +76,18 @@ export function UsersTable() {
   })
 
   // Fonction pour changer le statut d'un utilisateur
-  const toggleUserStatus = async (userId: string, currentStatus: UserStatus) => {
+  const toggleUserStatus = async (userId: string, currentStatus: boolean) => {
+
     try {
       await userService.toggleUserStatus(userId, currentStatus)
-      
+
       toast.success("Statut mis à jour", {
         description: "Le statut de l'utilisateur a été modifié avec succès"
       })
-      
+
       // Recharger les données
       await refetch()
-      
+
     } catch (error: any) {
       toast.error("Erreur", {
         description: error.message || "Impossible de modifier le statut"
@@ -97,14 +103,14 @@ export function UsersTable() {
 
     try {
       await userService.deleteUser(userId)
-      
+
       toast.success("Utilisateur supprimé", {
         description: "L'utilisateur a été supprimé avec succès"
       })
-      
+
       // Recharger les données
       await refetch()
-      
+
     } catch (error: any) {
       toast.error("Erreur", {
         description: error.message || "Impossible de supprimer l'utilisateur"
@@ -183,9 +189,9 @@ export function UsersTable() {
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
             {error.message}
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => refetch()}
               className="ml-2 h-6 px-2"
             >
@@ -215,7 +221,7 @@ export function UsersTable() {
             )}
             Actualiser
           </Button>
-          
+
           <Link href="/admin/user/add">
             <Button>
               <UserPlus className="w-4 h-4 mr-2" />
@@ -243,8 +249,8 @@ export function UsersTable() {
               </div>
 
               <div className="flex flex-wrap gap-2">
-                <Select 
-                  value={roleFilter} 
+                <Select
+                  value={roleFilter}
                   onValueChange={setRoleFilter}
                   disabled={isLoading}
                 >
@@ -259,8 +265,8 @@ export function UsersTable() {
                   </SelectContent>
                 </Select>
 
-                <Select 
-                  value={statusFilter} 
+                <Select
+                  value={statusFilter}
                   onValueChange={setStatusFilter}
                   disabled={isLoading}
                 >
@@ -291,6 +297,7 @@ export function UsersTable() {
                       <TableHead>Nom</TableHead>
                       <TableHead>Prénom</TableHead>
                       <TableHead>Email</TableHead>
+                      <TableHead>Telephone</TableHead>
                       <TableHead>Rôle</TableHead>
                       <TableHead>Statut</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
@@ -304,8 +311,8 @@ export function UsersTable() {
                             <Users className="h-12 w-12 text-gray-300" />
                             <p>Aucun utilisateur trouvé</p>
                             {searchQuery && (
-                              <Button 
-                                variant="ghost" 
+                              <Button
+                                variant="ghost"
                                 size="sm"
                                 onClick={() => setSearchQuery('')}
                               >
@@ -324,6 +331,7 @@ export function UsersTable() {
                             <TableCell className="font-medium">{user.nom}</TableCell>
                             <TableCell>{user.prenom}</TableCell>
                             <TableCell className="text-muted-foreground">{user.email}</TableCell>
+                            <TableCell className="text-muted-foreground">{user.telephone}</TableCell>
                             <TableCell>
                               <Badge className={roleBadge.variant}>{roleBadge.label}</Badge>
                             </TableCell>
@@ -331,7 +339,7 @@ export function UsersTable() {
                               <div className="flex items-center gap-2">
                                 <Switch
                                   checked={user.isActive === true}
-                                  onCheckedChange={() => toggleUserStatus(user.id, user.isActive ? "actif" : "inactif")}
+                                  onCheckedChange={() => toggleUserStatus(user.id, user.isActive )}
                                   disabled={isLoading}
                                 />
                                 <span
@@ -350,20 +358,24 @@ export function UsersTable() {
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                   <DropdownMenuItem>
-                                    <Link href={`/admin/users/${user.id}`} className="flex items-center w-full">
+                                    <Link href={`/admin/user/${user.id}`} className="flex items-center w-full">
                                       <Eye className="w-4 h-4 mr-2" />
                                       Détails
                                     </Link>
                                   </DropdownMenuItem>
                                   <DropdownMenuItem>
-                                    <Link href={`/admin/users/${user.id}/edit`} className="flex items-center w-full">
+                                    <Link href={`/admin/user/${user.id}/edit`} className="flex items-center w-full">
                                       <Edit className="w-4 h-4 mr-2" />
                                       Modifier
                                     </Link>
                                   </DropdownMenuItem>
-                                  <DropdownMenuItem 
+                                  <DropdownMenuItem
                                     className="text-destructive"
-                                    onClick={() => handleDeleteUser(user.id, `${user.prenom} ${user.nom}`)}
+                                    onSelect={(e) => {
+                                      e.preventDefault()
+                                      setOpenDelete(true)
+                                      setSelectedUser(user)
+                                    }}
                                   >
                                     <Trash2 className="w-4 h-4 mr-2" />
                                     Supprimer
@@ -392,7 +404,7 @@ export function UsersTable() {
                   "Chargement..."
                 )}
               </div>
-              
+
               {pagination && totalPages > 1 && (
                 <div className="flex items-center gap-2">
                   <Button
@@ -403,11 +415,11 @@ export function UsersTable() {
                   >
                     Précédent
                   </Button>
-                  
+
                   <span className="text-sm text-muted-foreground">
                     Page {pagination.page} sur {totalPages}
                   </span>
-                  
+
                   <Button
                     variant="outline"
                     size="sm"
@@ -423,6 +435,23 @@ export function UsersTable() {
         </CardContent>
       </Card>
 
+      {selectedUser && (
+        <ConfirmDeleteDialog
+          open={openDelete}
+          onOpenChange={(open) => {
+            setOpenDelete(open)
+            if (!open) setSelectedUser(null)
+          }}
+          title="Supprimer l'utilisateur"
+          description={`Vous êtes sur le point de supprimer l'utilisateur "${selectedUser.prenom} ${selectedUser.nom}". Cette action est irréversible.`}
+          confirmationText={`${selectedUser.prenom} ${selectedUser.nom}`}
+          onConfirm={async () => {
+            await userService.deleteUser(selectedUser.id)
+            toast.success("Utilisateur supprimé")
+            await refetch()
+          }}
+        />
+      )}
       {/* Cache info (développement seulement) */}
       {process.env.NODE_ENV === 'development' && (
         <div className="mt-4 p-3 bg-muted rounded-lg text-xs">

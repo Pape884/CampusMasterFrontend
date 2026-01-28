@@ -28,7 +28,7 @@ export default function EditDepartmentPage({ params }: { params: { id: string } 
   const [modules, setModules] = useState<Module[]>([])
 
   const [showModuleForm, setShowModuleForm] = useState(false)
-  const [currentModule, setCurrentModule] = useState({ id: "", name: "", code: "", semestre: "" })
+  const [currentModule, setCurrentModule] = useState({ id: "", name: "", code: "", semestre: "", departmentId: "" })
   const [currentCourse, setCurrentCourse] = useState({ name: "", code: "", credits: "" })
   const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -76,9 +76,10 @@ export default function EditDepartmentPage({ params }: { params: { id: string } 
           code: currentModule.code,
           semestre: currentModule.semestre,
           courses: [],
+          departmentId: currentModule.departmentId
         },
       ])
-      setCurrentModule({ id: "", name: "", code: "", semestre: "" })
+      setCurrentModule({ id: "", name: "", code: "", semestre: "", departmentId: "" })
       setShowModuleForm(false)
     }
   }
@@ -264,7 +265,7 @@ export default function EditDepartmentPage({ params }: { params: { id: string } 
                     variant="ghost"
                     onClick={() => {
                       setShowModuleForm(false)
-                      setCurrentModule({ id: "", name: "", code: "", semestre: "" })
+                      setCurrentModule({ id: "", name: "", code: "", semestre: "", departmentId: "" })
                     }}
                   >
                     Annuler

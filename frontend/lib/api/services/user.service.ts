@@ -2,20 +2,10 @@
 
 import { apiClient } from '../axios/client';
 import { cacheManager } from '../axios/cache';
-import { User, UserCreateDto, UserRole, UsersResponse, UserStats, UserStatus, UserUpdateDto } from '.';
-import { ST } from 'next/dist/shared/lib/utils';
-import { CreateUserRequest } from '@/lib/validations/user.schema';
+import { CreateUserRequest, User, UserFilters, UserRole, UsersResponse, UserStats, UserStatus, UserUpdateDto } from '.';
+import {  } from '@/lib/validations/user.schema';
 
 
-export interface UserFilters {
-  search?: string;
-  role?: UserRole | 'all';
-  status?: UserStatus | 'all';
-  page?: number;
-  limit?: number;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
-}
 
 class UserService {
   private basePath = '/users';
@@ -28,12 +18,12 @@ class UserService {
       const cacheKey = `users:${JSON.stringify(filters)}`;
 
       // Vérifier le cache d'abord
-    /*  const cached = cacheManager.get(cacheKey);
+     const cached = cacheManager.get(cacheKey);
       if (cached) {
         console.log('📦 Utilisateurs récupérés du cache');
         console.log(cached)
         return cached;
-      }*/
+      }
 
       // Construire les paramètres de requête
       const params = new URLSearchParams();
@@ -60,7 +50,7 @@ class UserService {
       console.log(response.data);
 
       // Mettre en cache
-     // cacheManager.set(cacheKey, response.data);
+      cacheManager.set(cacheKey, response.data);
 
       return response.data;
 
@@ -92,7 +82,7 @@ class UserService {
         },
       });
 
-      console.log(`✅ Utilisateur ${id} récupéré:`, response.data.email);
+      console.log(`✅ Utilisateur ${id} récupéré:`, response.data);
 
       cacheManager.set(cacheKey, response.data);
 
@@ -114,7 +104,7 @@ class UserService {
       console.log('📝 Validation et création d\'utilisateur:', userData.email);
 
       // Validation supplémentaire côté client
-      this.validateUserData(userData);
+      //this.validateUserData(userData);
 
       // Générer un matricule si non fourni
       const finalData = {
@@ -122,6 +112,7 @@ class UserService {
         matricule: userData.matricule || this.generateMatricule(userData.role),
       };
 
+      console.log('📤 Données envoyées:', finalData);
       const response = await apiClient.post<User>(this.basePath, finalData, {
         headers: {
           'Content-Type': 'application/json',
@@ -141,6 +132,11 @@ class UserService {
     }
   }
 
+   /**
+   * RECUPERER TOUS LES ETUDIANTS D'UN DEPARTEMENT
+   */
+   // async getUserByDepartment()
+
   /**
    * VALIDATION DES DONNÉES UTILISATEUR
    */
@@ -150,17 +146,6 @@ class UserService {
       throw new Error('Format d\'email invalide');
     }
 
-    // Validation âge minimum
-    if (data.dateNaissance) {
-      const birthDate = new Date(data.dateNaissance);
-      const today = new Date();
-      const age = today.getFullYear() - birthDate.getFullYear();
-      const monthDiff = today.getMonth() - birthDate.getMonth();
-
-      if (age < 16 || (age === 16 && monthDiff < 0)) {
-        throw new Error('L\'utilisateur doit avoir au moins 16 ans');
-      }
-    }
 
     // Validation téléphone
     if (data.telephone && !this.isValidPhone(data.telephone)) {
@@ -262,14 +247,14 @@ class UserService {
   /**
    * CHANGER LE STATUT D'UN UTILISATEUR (actif/inactif)
    */
-  async toggleUserStatus(id: string, currentStatus: UserStatus): Promise<User> {
-    const newStatus: UserStatus = currentStatus === 'actif' ? 'inactif' : 'actif';
+  async toggleUserStatus(id: string, currentStatus: boolean): Promise<User> {
 
+    const isActive = !currentStatus;
     try {
-      console.log(`🔄 Changement statut utilisateur ${id}: ${currentStatus} → ${newStatus}`);
+      console.log(`🔄 Changement statut utilisateur ${id}: ${!isActive} → ${isActive}`);
 
       const response = await apiClient.patch<User>(`${this.basePath}/${id}/status`, {
-        status: newStatus
+        isActive: isActive
       });
 
       // Mettre à jour le cache individuel
@@ -279,7 +264,7 @@ class UserService {
       // Invalider le cache des listes
       this.invalidateUsersCache();
 
-      console.log(`✅ Statut utilisateur ${id} changé à: ${newStatus}`);
+      console.log(`✅ Statut utilisateur ${id} changé à: ${status}`);
 
       return response.data;
 

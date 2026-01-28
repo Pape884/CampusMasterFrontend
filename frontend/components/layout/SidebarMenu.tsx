@@ -17,6 +17,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import ThemeToggle from "@/components/ThemeToggle"
+import { useAuthContext } from "@/context/authContext"
 
 export type UserRole = "ADMIN" | "TEACHER" | "STUDENT"
 
@@ -24,61 +25,61 @@ interface SidebarMenuProps {
   userRole: UserRole
   title: string
 }
-export const roleConfig = { 
-  ADMIN: { 
-    title: "LMS Admin", 
-    color: "blue", 
-    gradient: "from-blue-50 via-indigo-50 to-purple-50", 
-    initial: "AD", 
-  }, 
-  TEACHER: { 
-    title: "LMS Enseignant", 
-    color: "green", 
-    gradient: "from-green-50 via-emerald-50 to-teal-50", 
-    initial: "EN", 
-  }, 
-  STUDENT: { 
-    title: "LMS Étudiant", 
-    color: "purple", 
-    gradient: "from-purple-50 via-violet-50 to-fuchsia-50", 
-    initial: "ET", 
-  }, 
+export const roleConfig = {
+  ADMIN: {
+    title: "LMS Administrateur",
+    color: "blue",
+    gradient: "from-blue-50 via-indigo-50 to-purple-50",
+    initial: "AD",
+  },
+  TEACHER: {
+    title: "LMS Enseignant",
+    color: "green",
+    gradient: "from-green-50 via-emerald-50 to-teal-50",
+    initial: "EN",
+  },
+  STUDENT: {
+    title: "LMS Étudiant",
+    color: "purple",
+    gradient: "from-purple-50 via-violet-50 to-fuchsia-50",
+    initial: "ET",
+  },
 }
 
 const menuItems: Record<UserRole, { label: string; href: string; icon: React.ComponentType<{ className?: string }> }[]> = {
-    ADMIN: [
-      { label: "Tableau de bord", href: "/dashboard", icon: Home },
-      { label: "Utilisateurs", href: "/admin/users", icon: Users},
-      { label: "Départements", href: "/admin/department", icon: Users },
-      { label: "Rapports", href: "/admin/reports", icon: FileText },
-      { label: "Messagerie", href: "/messages", icon: MessageCircle },
-      { label: "Calendrier", href: "/admin/calendar", icon: Calendar },
-      { label: "Paramètres", href: "/admin/settings", icon: Settings },
-    ],
-    TEACHER: [
-      { label: "Tableau de bord", href: "/dashboard", icon: Home },
-      { label: "Mes Cours", href: "/teacher/courses", icon: BookOpen },
-      { label: "Devoirs", href: "/teacher/devoirs", icon: FileText },
-      { label: "Mes Étudiants", href: "/teacher/students", icon: Users },
-      { label: "Messagerie", href: "/messages", icon: MessageCircle },
-      { label: "Profile", href: "/profile", icon: User },
-    ],
-    STUDENT: [
-      { label: "Tableau de bord", href: "/dashboard", icon: Home },
-      { label: "Mes Cours", href: "/student/courses", icon: BookOpen },
-      { label: "Mes Devoirs", href: "/student/assignments", icon: FileText },
-      { label: "Mes Notes", href: "/student/notes", icon: Award },
-      { label: "Messagerie", href: "/messages", icon: MessageCircle },
-      { label: "Profile", href: "/profile", icon: User },
-    ],
-  } 
+  ADMIN: [
+    { label: "Tableau de bord", href: "/dashboard", icon: Home },
+    { label: "Utilisateurs", href: "/admin/users", icon: Users },
+    { label: "Départements", href: "/admin/department", icon: Users },
+    { label: "Rapports", href: "/admin/reports", icon: FileText },
+    { label: "Messagerie", href: "/messages", icon: MessageCircle },
+    { label: "Calendrier", href: "/admin/calendar", icon: Calendar },
+    { label: "Paramètres", href: "/admin/settings", icon: Settings },
+  ],
+  TEACHER: [
+    { label: "Tableau de bord", href: "/dashboard", icon: Home },
+    { label: "Mes Cours", href: "/teacher/courses", icon: BookOpen },
+    { label: "Devoirs", href: "/teacher/devoirs", icon: FileText },
+    { label: "Mes Étudiants", href: "/teacher/students", icon: Users },
+    { label: "Messagerie", href: "/messages", icon: MessageCircle },
+    { label: "Profile", href: "/profile", icon: User },
+  ],
+  STUDENT: [
+    { label: "Tableau de bord", href: "/dashboard", icon: Home },
+    { label: "Mes Cours", href: "/student/courses", icon: BookOpen },
+    { label: "Mes Devoirs", href: "/student/assignments", icon: FileText },
+    { label: "Mes Notes", href: "/student/notes", icon: Award },
+    { label: "Messagerie", href: "/messages", icon: MessageCircle },
+    { label: "Profile", href: "/profile", icon: User },
+  ],
+}
 
 
 const SidebarMenu = ({ userRole, title }: SidebarMenuProps) => {
   const pathname = usePathname()
 
-  
-
+  // Contexte d'authentification
+  const { logout, isLoading } = useAuthContext();
 
   return (
     <aside className="w-64 fixed h-screen flex flex-col border-r
@@ -127,6 +128,7 @@ const SidebarMenu = ({ userRole, title }: SidebarMenuProps) => {
         <Button
           variant="ghost"
           className="w-full justify-start gap-3 text-muted-foreground hover:text-destructive"
+          onClick={logout}
         >
           <LogOut className="w-5 h-5" />
           Déconnexion

@@ -52,31 +52,40 @@ export interface User {
   nom?: string;      // Nom
   telephone?: string;   // Téléphone
   role: UserRole;        // Rôles (ADMIN, USER, etc.)
-  departements?: string[]; // Départements
-  courses?: string[];
+  departement: string; // Départements
+  modules?: string[];
   isActive: boolean;      // Compte actif
   lastLogin?: string;     // Dernière connexion
   createdAt?: string;      // Date de création
 }
 
-export interface UserCreateDto {
-  matricule: string;
+export interface CreateUserRequest {
+  matricule?: string;
   nom: string;
   prenom: string;
   email: string;
-  password?: string;
+  password: string;
+  confirmPassword: string;
   role: UserRole;
-  phone?: string;
-  adresse?: string;
+  telephone?: string;
+  departement: string;
+  modules: string[];
+  isActive: boolean;
+  
 }
 
 export interface UserUpdateDto {
-  nom?: string;
-  prenom?: string;
-  email?: string;
-  role?: UserRole;
-  status?: UserStatus;
-  telephone?: string;
+  email?: string;          // Email
+  prenom?: string;     // Prénom
+  nom?: string;      // Nom
+  password?: string;
+  telephone?: string;   // Téléphone
+  role?: UserRole;        // Rôles (ADMIN, USER, etc.)
+  departement?: string; // Départements
+  modules?: string[];
+  isActive?: boolean;      // Compte actif
+  lastLogin?: string;     // Dernière connexion
+  createdAt?: string;      // Date de création
 }
 
 export interface UserStats {
@@ -86,6 +95,16 @@ export interface UserStats {
   studentsCount: number;
   actifs: number;
   inactifs: number;
+}
+
+export interface UserFilters {
+  search?: string;
+  role?: UserRole | 'all';
+  status?: UserStatus | 'all';
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
 }
 /*
 
@@ -139,15 +158,22 @@ export interface Module {
   name: string
   code: string
   semestre: string
+  departmentId: string
+  department?: Department[]
   courses?: Course[]
+}
+
+export interface modulesResponse{
+  message: string
+  data: Module[];
 }
 
 export type DepartmentStatus = 'actif' | 'inactif';
 
 export interface Department {
+  id: string;
   couleur: any;
   isActive: boolean;
-  id: string;
   code: string;
   name: string;
   description: string;
@@ -197,4 +223,33 @@ export interface DepartmentFilters {
   limit?: number;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
+}
+
+
+/* =========================
+   TYPES MODULES  
+========================= */
+
+export interface Module {
+  id: string
+  name: string
+  code: string
+  departmentId: string
+  isActive?: boolean
+  createdAt?: string
+  updatedAt?: string
+}
+
+export interface CreateModuleRequest {
+  name: string
+  code: string
+  departmentId: string
+  isActive?: boolean
+}
+
+export interface UpdateModuleRequest {
+  name?: string
+  code?: string
+  departmentId?: string
+  isActive?: boolean
 }

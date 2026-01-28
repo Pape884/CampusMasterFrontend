@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -11,11 +11,11 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { 
-  ArrowLeft, 
-  UserPlus, 
-  X, 
-  Eye, 
+import {
+  ArrowLeft,
+  UserPlus,
+  X,
+  Eye,
   EyeOff,
   Loader2,
   CheckCircle,
@@ -23,12 +23,11 @@ import {
   Info
 } from "lucide-react"
 import Link from "next/link"
-import { 
-  userSchema, 
-  UserFormData, 
-  UserRole, 
-  formatRoleForDisplay,
-  CreateUserRequest 
+import {
+  userSchema,
+  UserFormData,
+  UserRole,
+  formatRoleForDisplay
 } from "@/lib/validations/user.schema"
 import { userService } from "@/lib/api/services/user.service"
 import { useFormData } from "@/lib/hooks/useFormData"
@@ -37,10 +36,11 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { cn } from "@/lib/utils"
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { PasswordStrengthIndicator } from "@/components/ui/password-strength"
+import { CreateUserRequest } from "@/lib/api/services"
 
 export default function AddUser() {
   const router = useRouter()
-  
+
   // États UI
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
@@ -49,10 +49,10 @@ export default function AddUser() {
   const [submitSuccess, setSubmitSuccess] = useState(false)
 
   // Données pour les sélecteurs
-  const { departments, courses, isLoading: isLoadingData, error: dataError } = useFormData()
+  const { departments, modules, isLoading: isLoadingData, error: dataError } = useFormData()
 
   // Initialisation du formulaire avec react-hook-form
-  const form = useForm({
+  const form = useForm<UserFormData>({
     resolver: zodResolver(userSchema),
     defaultValues: {
       role: 'STUDENT',
@@ -62,28 +62,23 @@ export default function AddUser() {
       telephone: '',
       password: '',
       confirmPassword: '',
-      departements: [],
-      cours: [],
+      departement: '',
+      modules: [],
       isActive: true,
-      permissions: {
-        gestionUtilisateurs: false,
-        gestionDepartements: false,
-        gestionCours: false,
-      },
     },
-    mode: 'onChange', // Validation en temps réel
-  } as const)
+    mode: 'onChange',
+  })
 
   // Surveiller le rôle pour ajuster les validations
   const selectedRole = form.watch('role')
-  const watchedDepartments = form.watch('departements')
-  const watchedCourses = form.watch('cours')
+  const watchedDepartmentId = form.watch('departement')
+  const watchedModules = form.watch('modules') ?? []
 
   // Réinitialiser les sélections lorsque le rôle change
   useEffect(() => {
     if (selectedRole === 'ADMIN') {
-      form.setValue('departements', [])
-      form.setValue('cours', [])
+      form.setValue('departement', '')
+      form.setValue('modules', [])
     }
   }, [selectedRole, form])
 
@@ -100,30 +95,30 @@ export default function AddUser() {
 
   const passwordStrength = calculatePasswordStrength(form.watch('password'))
 
-  // Gestionnaires d'événements
-  const addDepartment = (deptId: string) => {
-    const currentDepartments = form.getValues('departements') || []
-    if (!currentDepartments?.includes(deptId)) {
-      form.setValue('departements', [...currentDepartments, deptId])
+  const addModule = (moduleId: string) => {
+    const current = form.getValues("modules") ?? []
+    if (!current.includes(moduleId)) {
+      form.setValue("modules", [...current, moduleId], {
+        shouldValidate: true,
+      })
     }
   }
 
-  const removeDepartment = (deptId: string) => {
-    const currentDepartments = form.getValues('departements')
-    form.setValue('departements', currentDepartments?.filter((d) => d !== deptId))
+  const removeModule = (moduleId: string) => {
+    const current = form.getValues("modules") ?? []
+    form.setValue(
+      "modules",
+      current.filter((id) => id !== moduleId),
+      { shouldValidate: true }
+    )
   }
 
-  const addCourse = (courseId: string) => {
-    const currentCourses = form.getValues('cours') || []
-    if (!currentCourses?.includes(courseId)) {
-      form.setValue('cours', [...currentCourses, courseId])
-    }
-  }
-
-  const removeCourse = (courseId: string) => {
-    const currentCourses = form.getValues('cours')
-    form.setValue('cours', currentCourses?.filter((c) => c !== courseId))
-  }
+  const filteredModules = useMemo(() => {
+    if (!watchedDepartmentId || selectedRole === 'ADMIN') return []
+    return modules.filter(
+      (m) => String(m.departmentId) === String(watchedDepartmentId)
+    )
+  }, [modules, watchedDepartmentId, selectedRole])
 
   // Soumission du formulaire
   const onSubmit = async (data: UserFormData) => {
@@ -140,12 +135,12 @@ export default function AddUser() {
         prenom: data.prenom.trim(),
         email: data.email.trim().toLowerCase(),
         password: data.password,
+        confirmPassword: data.confirmPassword,
         role: data.role,
         telephone: data.telephone?.trim() || undefined,
-        departements: data.departements || [],
-        cours: data.cours || [],
+        departement: data.departement || '',
+        modules: data.modules || [],
         isActive: data.isActive,
-        permissions: data.role === 'ADMIN' ? data.permissions : undefined,
       }
 
       // Appel à l'API
@@ -153,7 +148,7 @@ export default function AddUser() {
 
       // Succès
       console.log('✅ Utilisateur créé:', response)
-      
+
       toast.success('Utilisateur créé avec succès', {
         description: `${data.prenom} ${data.nom} a été ajouté avec le rôle ${formatRoleForDisplay(data.role)}`,
         duration: 5000,
@@ -163,28 +158,28 @@ export default function AddUser() {
 
       // Redirection après 2 secondes
       setTimeout(() => {
-        router.push('/users')
+        router.push('/admin/users')
         router.refresh()
       }, 2000)
 
     } catch (error: any) {
       console.error('❌ Erreur lors de la création:', error)
-      
+
       // Gestion des erreurs spécifiques
       let errorMessage = 'Une erreur est survenue lors de la création'
-      
-      if (error.message.includes('409')) {
+
+      if (error.message?.includes('409')) {
         errorMessage = 'Cette adresse email est déjà utilisée'
-      } else if (error.message.includes('validation')) {
+      } else if (error.message?.includes('validation')) {
         errorMessage = 'Les données fournies sont invalides'
-      } else if (error.message.includes('réseau')) {
+      } else if (error.message?.includes('réseau') || error.message?.includes('network')) {
         errorMessage = 'Erreur de connexion au serveur'
       } else {
         errorMessage = error.message || errorMessage
       }
 
       setSubmitError(errorMessage)
-      
+
       toast.error('Erreur de création', {
         description: errorMessage,
         duration: 5000,
@@ -220,15 +215,15 @@ export default function AddUser() {
   // Erreur de chargement des données
   if (dataError) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background p-8">
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Erreur de chargement</AlertTitle>
           <AlertDescription>
             {dataError}
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => window.location.reload()}
               className="ml-4"
             >
@@ -242,13 +237,16 @@ export default function AddUser() {
 
   return (
     <div className="min-h-screen bg-background p-8">
-      <div className="mx-auto">
+      <div className="max-w-4xl mx-auto">
         {/* En-tête */}
         <div className="mb-8">
           <Link
             href="/admin/users"
             className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
-            onClick={handleCancel}
+            onClick={(e) => {
+              e.preventDefault()
+              handleCancel()
+            }}
           >
             <ArrowLeft className="h-4 w-4" />
             Retour à la liste
@@ -257,7 +255,7 @@ export default function AddUser() {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className="text-3xl font-bold text-foreground mb-2">Nouvel utilisateur</h1>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-muted-foreground">
                 Créez un nouveau compte utilisateur. Les champs marqués d'un * sont obligatoires.
               </p>
             </div>
@@ -294,7 +292,7 @@ export default function AddUser() {
                   Sélectionnez le rôle qui définira les permissions de l'utilisateur
                 </p>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {(['STUDENT', 'TEACHER', 'ADMIN'] as UserRole[]).map((role) => (
                   <button
@@ -304,8 +302,8 @@ export default function AddUser() {
                     className={cn(
                       "p-4 rounded-lg border-2 transition-all text-left cursor-pointer",
                       "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
-                      selectedRole === role 
-                        ? "border-primary bg-primary/5" 
+                      selectedRole === role
+                        ? "border-primary bg-primary/5"
                         : "border-border hover:border-primary/50 bg-card"
                     )}
                   >
@@ -335,7 +333,7 @@ export default function AddUser() {
             {/* Informations de base */}
             <Card className="p-6">
               <h2 className="text-lg font-semibold text-foreground mb-6">Informations personnelles</h2>
-              
+
               <div className="grid md:grid-cols-2 gap-6">
                 {/* Prénom */}
                 <FormField
@@ -345,9 +343,9 @@ export default function AddUser() {
                     <FormItem>
                       <FormLabel>Prénom *</FormLabel>
                       <FormControl>
-                        <Input 
-                          {...field} 
-                          placeholder="Prénom" 
+                        <Input
+                          {...field}
+                          placeholder="Prénom"
                           className={cn(
                             form.formState.errors.prenom && "border-destructive focus-visible:ring-destructive"
                           )}
@@ -366,9 +364,9 @@ export default function AddUser() {
                     <FormItem>
                       <FormLabel>Nom *</FormLabel>
                       <FormControl>
-                        <Input 
-                          {...field} 
-                          placeholder="Nom" 
+                        <Input
+                          {...field}
+                          placeholder="Nom"
                           className={cn(
                             form.formState.errors.nom && "border-destructive focus-visible:ring-destructive"
                           )}
@@ -387,10 +385,10 @@ export default function AddUser() {
                     <FormItem>
                       <FormLabel>Email *</FormLabel>
                       <FormControl>
-                        <Input 
-                          {...field} 
-                          type="email" 
-                          placeholder="email@exemple.fr" 
+                        <Input
+                          {...field}
+                          type="email"
+                          placeholder="email@exemple.fr"
                           className={cn(
                             form.formState.errors.email && "border-destructive focus-visible:ring-destructive"
                           )}
@@ -412,29 +410,28 @@ export default function AddUser() {
                     <FormItem>
                       <FormLabel>Téléphone</FormLabel>
                       <FormControl>
-                        <Input 
-                          {...field} 
-                          placeholder="77 100 00 00" 
+                        <Input
+                          {...field}
+                          placeholder="771000000 ou 0771000000"
                           className={cn(
                             form.formState.errors.telephone && "border-destructive focus-visible:ring-destructive"
                           )}
                         />
                       </FormControl>
                       <FormDescription>
-                        Format: 77 100 00 00
+                        Format: 771000000 ou 0771000000
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-
               </div>
             </Card>
 
             {/* Mot de passe */}
             <Card className="p-6">
               <h2 className="text-lg font-semibold text-foreground mb-6">Sécurité</h2>
-              
+
               <div className="grid md:grid-cols-2 gap-6">
                 {/* Mot de passe */}
                 <FormField
@@ -445,10 +442,10 @@ export default function AddUser() {
                       <FormLabel>Mot de passe *</FormLabel>
                       <FormControl>
                         <div className="relative">
-                          <Input 
-                            {...field} 
-                            type={showPassword ? "text" : "password"} 
-                            placeholder="Min. 8 caractères" 
+                          <Input
+                            {...field}
+                            type={showPassword ? "text" : "password"}
+                            placeholder="Min. 8 caractères"
                             className={cn(
                               "pr-10",
                               form.formState.errors.password && "border-destructive focus-visible:ring-destructive"
@@ -484,10 +481,10 @@ export default function AddUser() {
                       <FormLabel>Confirmer le mot de passe *</FormLabel>
                       <FormControl>
                         <div className="relative">
-                          <Input 
-                            {...field} 
-                            type={showConfirmPassword ? "text" : "password"} 
-                            placeholder="Répétez le mot de passe" 
+                          <Input
+                            {...field}
+                            type={showConfirmPassword ? "text" : "password"}
+                            placeholder="Répétez le mot de passe"
                             className={cn(
                               "pr-10",
                               form.formState.errors.confirmPassword && "border-destructive focus-visible:ring-destructive"
@@ -508,7 +505,7 @@ export default function AddUser() {
                           </Button>
                         </div>
                       </FormControl>
-                      {!form.formState.errors.confirmPassword && field.value && (
+                      {!form.formState.errors.confirmPassword && field.value && form.watch('password') === field.value && (
                         <div className="flex items-center gap-2 text-sm text-green-600 mt-2">
                           <CheckCircle className="h-4 w-4" />
                           Les mots de passe correspondent
@@ -566,206 +563,120 @@ export default function AddUser() {
               </div>
             </Card>
 
-            {/* Section Étudiant */}
-            {selectedRole === 'STUDENT' && (
+            {/* Section Étudiant et Enseignant */}
+            {(selectedRole === 'STUDENT' || selectedRole === 'TEACHER') && (
               <>
+                {/* Département */}
                 <Card className="p-6">
-                  <h2 className="text-lg font-semibold text-foreground mb-4">Département *</h2>
-                  <Select 
-                    onValueChange={(value) => form.setValue('departements', [value])}
-                    value={(watchedDepartments && watchedDepartments[0]) || ""}
+                  <h2 className="text-lg font-semibold text-foreground mb-4">
+                    {selectedRole === 'STUDENT' ? 'Département d\'étude *' : 'Département d\'enseignement *'}
+                  </h2>
+                  <Select
+                    value={watchedDepartmentId}
+                    onValueChange={(value) => {
+                      form.setValue('departement', value)
+                      // Réinitialiser les modules quand le département change
+                      form.setValue('modules', [])
+                    }}
                   >
-                    <SelectTrigger className={cn(
-                      (watchedDepartments?.length ?? 0) === 0 && "border-destructive focus-visible:ring-destructive"
-                    )}>
+                    <SelectTrigger>
                       <SelectValue placeholder="Sélectionner un département" />
                     </SelectTrigger>
                     <SelectContent>
                       {departments.map((dept) => (
-                        <SelectItem key={dept.id} value={dept.id}>
+                        <SelectItem key={dept.id} value={String(dept.id)}>
                           {dept.name} ({dept.code})
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  {form.formState.errors.departements && (
+                  {form.formState.errors.departement && (
                     <p className="text-sm text-destructive mt-2">
-                      {form.formState.errors.departements.message}
+                      {form.formState.errors.departement.message}
                     </p>
                   )}
-                  {(watchedDepartments?.length ?? 0) > 0 && (
+                  {watchedDepartmentId && (
                     <div className="mt-4 flex items-center gap-2">
                       <Badge variant="secondary" className="gap-2">
-                        {watchedDepartments && departments.find(d => d.id === watchedDepartments[0])?.name}
+                        {departments.find(d => String(d.id) === String(watchedDepartmentId))?.name}
                         <X
                           className="h-3 w-3 cursor-pointer hover:text-red-500"
-                          onClick={() => form.setValue('departements', [])}
+                          onClick={() => {
+                            form.setValue('departement', '')
+                            form.setValue('modules', [])
+                          }}
                         />
                       </Badge>
                     </div>
                   )}
                 </Card>
 
-                <Card className="p-6">
-                  <h2 className="text-lg font-semibold text-foreground mb-4">Cours à suivre *</h2>
-                  <Select onValueChange={addCourse}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Ajouter des cours" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {courses
-                        .filter((c) => !watchedCourses?.includes(c.id))
-                        .map((cours) => (
-                          <SelectItem key={cours.id} value={cours.id}>
-                            {cours.nom} ({cours.code})
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                  {form.formState.errors.cours && (
-                    <p className="text-sm text-destructive mt-2">
-                      {form.formState.errors.cours.message}
-                    </p>
-                  )}
-                  {watchedCourses?.length && watchedCourses.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-4">
-                      {watchedCourses?.map((courseId) => {
-                        const course = courses.find((c) => c.id === courseId)
-                        return (
-                          <Badge key={courseId} variant="secondary" className="gap-2">
-                            {course?.nom}
-                            <X
-                              className="h-3 w-3 cursor-pointer hover:text-red-500"
-                              onClick={() => removeCourse(courseId)}
-                            />
-                          </Badge>
-                        )
-                      })}
+                {/* Modules */}
+                {watchedDepartmentId && (
+                  <Card className="p-6">
+                    <h2 className="text-lg font-semibold text-foreground mb-4">
+                      {selectedRole === 'STUDENT' ? 'Modules à suivre *' : 'Modules à enseigner *'}
+                    </h2>
+                    
+                    <div className="mb-4">
+                      <Select
+                        value=""
+                        onValueChange={addModule}
+                        disabled={filteredModules.length === 0 || filteredModules.filter(m => !watchedModules.includes(String(m.id))).length === 0}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={
+                            filteredModules.length === 0 
+                              ? "Aucun module disponible pour ce département"
+                              : "Ajouter un module"
+                          } />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {filteredModules
+                            .filter(m => !watchedModules.includes(String(m.id)))
+                            .map(module => (
+                              <SelectItem key={module.id} value={String(module.id)}>
+                                {module.name} ({module.code})
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
                     </div>
-                  )}
-                </Card>
-              </>
-            )}
 
-            {/* Section Enseignant */}
-            {selectedRole === 'TEACHER' && (
-              <>
-                <Card className="p-6">
-                  <h2 className="text-lg font-semibold text-foreground mb-4">Départements *</h2>
-                  <Select onValueChange={addDepartment}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Ajouter des départements" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {departments
-                        .filter((d) => !watchedDepartments?.includes(d.id))
-                        .map((dept) => (
-                          <SelectItem key={dept.id} value={dept.id}>
-                            {dept.name} ({dept.code})
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                  {form.formState.errors.departements && (
-                    <p className="text-sm text-destructive mt-2">
-                      {form.formState.errors.departements.message}
-                    </p>
-                  )}
-                  {(watchedDepartments?.length ?? 0) > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-4">
-                      {watchedDepartments?.map((deptId) => {
-                        const dept = departments.find((d) => d.id === deptId)
-                        return (
-                          <Badge key={deptId} variant="secondary" className="gap-2">
-                            {dept?.name}
-                            <X
-                              className="h-3 w-3 cursor-pointer hover:text-red-500"
-                              onClick={() => removeDepartment(deptId)}
-                            />
-                          </Badge>
-                        )
-                      })}
-                    </div>
-                  )}
-                </Card>
+                    {form.formState.errors.modules && (
+                      <p className="text-sm text-destructive mt-2">
+                        {form.formState.errors.modules.message}
+                      </p>
+                    )}
 
-                <Card className="p-6">
-                  <h2 className="text-lg font-semibold text-foreground mb-4">Cours à enseigner *</h2>
-                  <Select onValueChange={addCourse}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Ajouter des cours" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {courses
-                        .filter((c) => !watchedCourses?.includes(c.id))
-                        .map((cours) => (
-                          <SelectItem key={cours.id} value={cours.id}>
-                            {cours.nom} ({cours.code})
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                  {form.formState.errors.cours && (
-                    <p className="text-sm text-destructive mt-2">
-                      {form.formState.errors.cours.message}
-                    </p>
-                  )}
-                  {(watchedCourses?.length ?? 0) > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-4">
-                      {watchedCourses?.map((courseId) => {
-                        const course = courses.find((c) => c.id === courseId)
-                        return (
-                          <Badge key={courseId} variant="secondary" className="gap-2">
-                            {course?.nom}
-                            <X
-                              className="h-3 w-3 cursor-pointer hover:text-red-500"
-                              onClick={() => removeCourse(courseId)}
-                            />
-                          </Badge>
-                        )
-                      })}
-                    </div>
-                  )}
-                </Card>
-              </>
-            )}
-
-            {/* Section Administrateur 
-            {selectedRole === 'ADMIN' && (
-              <Card className="p-6">
-                <h2 className="text-lg font-semibold text-foreground mb-4">Permissions</h2>
-                <div className="space-y-4">
-                  {Object.entries(form.watch('permissions') || {}).map(([key, value]) => (
-                    <FormField
-                      key={key}
-                      control={form.control}
-                      name={`permissions.${key}`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
-                            <FormLabel className="text-sm cursor-pointer">
-                              {key === 'gestionUtilisateurs' && 'Gestion des utilisateurs'}
-                              {key === 'gestionDepartements' && 'Gestion des départements'}
-                              {key === 'gestionCours' && 'Gestion des cours'}
-                            </FormLabel>
-                            <FormControl>
-                              <Switch 
-                                checked={field.value} 
-                                onCheckedChange={field.onChange} 
+                    {watchedModules.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-4">
+                        {watchedModules.map((moduleId) => {
+                          const module = modules.find(m => String(m.id) === String(moduleId))
+                          return (
+                            <Badge key={moduleId} variant="secondary" className="gap-2">
+                              {module?.name}
+                              <X
+                                className="h-3 w-3 cursor-pointer hover:text-red-500"
+                                onClick={() => removeModule(moduleId)}
                               />
-                            </FormControl>
-                          </div>
-                        </FormItem>
-                      )}
-                    />
-                  ))}
-                </div>
-                <div className="mt-4 text-sm text-muted-foreground">
-                  <Info className="h-4 w-4 inline mr-1" />
-                  Les administrateurs ont accès à tous les modules par défaut
-                </div>
-              </Card>
-            )}*/}
+                            </Badge>
+                          )
+                        })}
+                      </div>
+                    )}
+
+                    {watchedModules.length === 0 && watchedDepartmentId && (
+                      <div className="text-sm text-muted-foreground mt-2">
+                        {selectedRole === 'STUDENT' 
+                          ? "Sélectionnez au moins un module que l'étudiant suivra"
+                          : "Sélectionnez au moins un module que l'enseignant enseignera"}
+                      </div>
+                    )}
+                  </Card>
+                )}
+              </>
+            )}
 
             {/* Statut */}
             <Card className="p-6">
@@ -778,15 +689,15 @@ export default function AddUser() {
                       <div>
                         <FormLabel className="text-sm font-medium">Compte actif</FormLabel>
                         <FormDescription className="text-xs text-muted-foreground mt-1">
-                          {field.value 
-                            ? 'L\'utilisateur pourra se connecter immédiatement' 
+                          {field.value
+                            ? 'L\'utilisateur pourra se connecter immédiatement'
                             : 'Le compte sera créé mais désactivé'}
                         </FormDescription>
                       </div>
                       <FormControl>
-                        <Switch 
-                          checked={field.value} 
-                          onCheckedChange={field.onChange} 
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
                         />
                       </FormControl>
                     </div>
@@ -801,13 +712,13 @@ export default function AddUser() {
                 <div>
                   <h3 className="font-medium text-foreground">Résumé</h3>
                   <p className="text-sm text-muted-foreground">
-                    {form.watch('prenom') && form.watch('nom') 
+                    {form.watch('prenom') && form.watch('nom')
                       ? `Création de ${form.watch('prenom')} ${form.watch('nom')} comme ${formatRoleForDisplay(selectedRole)}`
                       : 'Remplissez le formulaire pour voir le résumé'
                     }
                   </p>
                 </div>
-                
+
                 <div className="flex gap-3">
                   <Button
                     type="button"
@@ -817,7 +728,7 @@ export default function AddUser() {
                   >
                     Annuler
                   </Button>
-                  
+
                   <Button
                     type="submit"
                     disabled={isSubmitting || !form.formState.isValid}
