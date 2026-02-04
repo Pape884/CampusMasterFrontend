@@ -153,8 +153,8 @@ export function LoginForm({
    */
   const fillTestAccount = () => {
     setFormData({
-      email: 'test2@exemple.com',
-      password: 'password123',
+      email: 'pierre@gmail.com',
+      password: 'Password123@',
     });
     setError('');
     setValidationErrors({});

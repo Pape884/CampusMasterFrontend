@@ -1,6 +1,6 @@
 "use client"
 
-import SidebarMenu, { roleConfig, UserRole } from "./SidebarMenu"
+import SidebarMenu, { roleConfig } from "./SidebarMenu"
 import Header from "./Header"
 import { withAuth } from "@/context/authContext"
 

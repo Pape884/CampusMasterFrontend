@@ -22,7 +22,7 @@ import React, {
 } from 'react';
 import { useRouter } from 'next/navigation';
 import { authService } from '@/lib/api/services/auth.service';
-import { LoginCredentials, RegisterData, User } from '@/lib/api/services';
+import { LoginCredentials, User } from '@/lib/api/services';
 
 
 // Type du contexte
@@ -35,7 +35,6 @@ interface AuthContextType {
   // Actions
   login: (credentials: LoginCredentials) => Promise<void>;
   logout: () => Promise<void>;
-  register: (data: RegisterData) => Promise<void>;
   refreshUser: () => Promise<void>;
   clearAuthData: () => void;
   /*
@@ -170,36 +169,7 @@ export function AuthProvider({
     }
   }, [router]);
   
-  /**
-   * INSCRIPTION
-   */
-  const register = useCallback(async (data: RegisterData) => {
-    setIsLoading(true);
-    
-    try {
-      console.log('📝 Inscription...');
-      
-      // Validation des mots de passe
-      if (data.password !== data.confirmPassword) {
-        throw new Error('Les mots de passe ne correspondent pas');
-      }
-      
-      // Appel au service
-      const response = await authService.register(data);
-      
-      // Mise à jour de l'état
-      setUser(response.data.user);
-      console.log('✅ Inscription réussie pour:', response.data.user.email);
-      
-    } catch (error: any) {
-      console.error('❌ Erreur d\'inscription:', error);
-      setUser(null);
-      authService.clearAuthData();
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+
   
   /**
    * RAFRAÎCHISSEMENT DE L'UTILISATEUR
@@ -276,7 +246,6 @@ export function AuthProvider({
     // Actions
     login,
     logout,
-    register,
     refreshUser,
     clearAuthData,
     
@@ -292,7 +261,6 @@ export function AuthProvider({
     isLoading,
     login,
     logout,
-    register,
     refreshUser,
     clearAuthData,
    /* hasRole,

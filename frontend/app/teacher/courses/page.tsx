@@ -1,29 +1,21 @@
 "use client"
 import Layout from "@/components/layout/Layout"
-import AdminLayout from "@/components/layout/Layout"
-import { UserRole } from "@/components/layout/SidebarMenu"
 import TeacherCoursesPage from "@/components/teacher/courses/courses-list"
-import { useState } from "react"
+import Unauthorized from "@/components/ui/Unauthorized"
+import { useAuthContext } from "@/context/authContext"
 
 
 export default function TeacherCourses() {
-    const [userRole] = useState<UserRole>("teacher") // Changez cette valeur pour tester différents rôles
-    const renderViews= () => {
-        switch (userRole) {
-            case "admin":
-                return null
-            case "teacher":
-                return <TeacherCoursesPage/>
-            case "student":
-                return null
-            default:
-                return null
-        }
-    }
+     const { user } = useAuthContext();
+          
+          // Si pas d'utilisateur
+          if (!user) {
+            return <Unauthorized />;
+          }
 
     return (
-        <Layout userRole={userRole} title="Gestions des Cours Affectés">
-                {renderViews()}
+        <Layout userRole={user.role} title="Gestions des Cours Affectés">
+                <TeacherCoursesPage/>
         </Layout>
 
     )

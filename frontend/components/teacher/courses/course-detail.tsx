@@ -11,456 +11,808 @@ import {
   Plus,
   Edit2,
   Trash2,
+  Calendar,
+  Building,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import Link from "next/link"
-import { useParams } from "next/navigation"
-import { useState } from "react"
+import { useParams, useRouter } from "next/navigation"
+import { useState, useEffect } from "react"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Separator } from "@/components/ui/separator"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Skeleton } from "@/components/ui/skeleton"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { courseService } from "@/lib/api/services/course.service"
+import { chapterService } from "@/lib/api/services/chapter.service"
+import { toast } from "sonner"
+import { Course, Chapter, User, Module } from "@/lib/api/services"
+import { moduleService } from "@/lib/api/services/module.service"
 
-type Chapter = {
-  id: number
-  title: string
-  completed: boolean
-  duration: string
-  students: number
-  pdfUrl?: string
-  pdfName?: string
-}
 
 export default function CourseDetailsPage() {
   const params = useParams()
-  const courseId = params.id
+  const router = useRouter()
+  const courseId = params.id as string
 
-  const [chapters, setChapters] = useState<Chapter[]>([
-    {
-      id: 1,
-      title: "Introduction aux espaces vectoriels",
-      completed: true,
-      duration: "2h",
-      students: 45,
-      pdfUrl: "/cours/chapitre1.pdf",
-      pdfName: "chapitre1.pdf",
-    },
-    {
-      id: 2,
-      title: "Sous-espaces et bases",
-      completed: true,
-      duration: "3h",
-      students: 45,
-      pdfUrl: "/cours/chapitre2.pdf",
-      pdfName: "chapitre2.pdf",
-    },
-    {
-      id: 3,
-      title: "Applications linéaires",
-      completed: true,
-      duration: "2.5h",
-      students: 44,
-      pdfUrl: "/cours/chapitre3.pdf",
-      pdfName: "chapitre3.pdf",
-    },
-    { id: 4, title: "Matrices et opérations", completed: true, duration: "3h", students: 43 },
-    { id: 5, title: "Déterminants", completed: true, duration: "2h", students: 45 },
-    { id: 6, title: "Systèmes linéaires", completed: true, duration: "3h", students: 42 },
-    { id: 7, title: "Valeurs propres et vecteurs propres", completed: true, duration: "3.5h", students: 40 },
-    { id: 8, title: "Diagonalisation", completed: true, duration: "2.5h", students: 41 },
-    { id: 9, title: "Produits scalaires", completed: true, duration: "2h", students: 43 },
-    { id: 10, title: "Orthogonalité", completed: false, duration: "3h", students: 0 },
-    { id: 11, title: "Formes quadratiques", completed: false, duration: "2.5h", students: 0 },
-    { id: 12, title: "Applications et révisions", completed: false, duration: "3h", students: 0 },
-  ])
+  const [course, setCourse] = useState<Course | null>(null)
+  const [chapters, setChapters] = useState<Chapter[]>([])
+  const [module, setmodule] = useState<Module>()
+  const [loading, setLoading] = useState({
+    course: true,
+    chapters: true,
+    students: false,
+  })
+  const [error, setError] = useState<string | null>(null)
 
   const [showAddChapter, setShowAddChapter] = useState(false)
-  const [editingChapter, setEditingChapter] = useState<number | null>(null)
-  const [newChapter, setNewChapter] = useState({ title: "", duration: "", pdfFile: null as File | null })
+  const [editingChapter, setEditingChapter] = useState<string | null>(null)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [chapterToDelete, setChapterToDelete] = useState<string | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
 
-  const course = {
-    id: courseId,
-    title: "Algèbre Linéaire",
-    code: "MATH301",
-    module: "Mathématiques Fondamentales",
-    department: "Mathématiques",
-    description:
-      "Ce cours couvre les concepts fondamentaux de l'algèbre linéaire, incluant les espaces vectoriels, les transformations linéaires, les matrices et les déterminants.",
-    students: 45,
-    chapters: 12,
-    progress: 75,
-    status: "En cours",
-    semester: "Semestre 3",
-    credits: 6,
-    hoursPerWeek: 4,
-    startDate: "2024-09-01",
-    endDate: "2024-12-20",
-  }
+  const [newChapter, setNewChapter] = useState({
+    title: "",
+    duration: "",
+    pdfFile: null as File | null
+  })
 
-  const students = [
-    { id: 1, name: "Marie Dupont", matricule: "ETU2024001", progress: 90, lastActivity: "2024-01-15" },
-    { id: 2, name: "Jean Martin", matricule: "ETU2024002", progress: 85, lastActivity: "2024-01-14" },
-    { id: 3, name: "Sophie Laurent", matricule: "ETU2024003", progress: 78, lastActivity: "2024-01-15" },
-    { id: 4, name: "Pierre Dubois", matricule: "ETU2024004", progress: 92, lastActivity: "2024-01-13" },
-    { id: 5, name: "Emma Bernard", matricule: "ETU2024005", progress: 88, lastActivity: "2024-01-15" },
-  ]
+  const [editForm, setEditForm] = useState({
+    title: "",
+    duration: "",
+    pdfFile: null as File | null
+  })
+
+  // Charger les données du cours
+  useEffect(() => {
+    const fetchCourseData = async () => {
+      try {
+        setLoading(prev => ({ ...prev, course: true }))
+        const courseData = await courseService.getCourseById(courseId)
+        console.log("recuperation : " + courseData)
+        const moduleData = await moduleService.getById(courseData.data.moduleId)
+        setCourse(courseData.data)
+        setmodule(moduleData)
+        setError(null)
+      } catch (error: any) {
+        setError(error.message)
+        toast.error("Impossible de charger les informations du cours")
+      } finally {
+        setLoading(prev => ({ ...prev, course: false }))
+      }
+    }
+
+    if (courseId) {
+      fetchCourseData()
+    }
+  }, [courseId])
+
+  // Charger les chapitres du cours
+  useEffect(() => {
+    const fetchChapters = async () => {
+      if (!courseId) return
+
+      try {
+        setLoading(prev => ({ ...prev, chapters: true }))
+        const chaptersData = await chapterService.getChaptersByCourse(courseId)
+        console.log(chaptersData)
+        setChapters(chaptersData)
+      } catch (error: any) {
+        console.error("Erreur lors du chargement des chapitres:", error)
+        toast.error("Impossible de charger les chapitres")
+      } finally {
+        setLoading(prev => ({ ...prev, chapters: false }))
+      }
+    }
+
+    if (courseId) {
+      fetchChapters()
+    }
+  }, [courseId])
+
 
   const completedChapters = chapters.filter((ch) => ch.completed).length
 
-  const handleAddChapter = () => {
-    if (newChapter.title && newChapter.duration) {
-      const chapter: Chapter = {
-        id: chapters.length + 1,
+  const handleAddChapter = async () => {
+    if (!newChapter.title || !newChapter.duration || !courseId) {
+      toast.error("Veuillez remplir tous les champs obligatoires")
+      return
+    }
+
+    try {
+      const chapterData: Partial<Chapter> = {
         title: newChapter.title,
         duration: newChapter.duration,
         completed: false,
-        students: 0,
+        order: chapters.length + 1,
+        courseId: courseId,
       }
+
+      const createdChapter = await chapterService.createChapter(chapterData)
+      console.log("Chapitre créé:", createdChapter)
+
+      // Si un fichier PDF est fourni, l'ajouter comme ressource
       if (newChapter.pdfFile) {
-        chapter.pdfUrl = URL.createObjectURL(newChapter.pdfFile)
-        chapter.pdfName = newChapter.pdfFile.name
+        const formData = new FormData()
+
+        formData.append("name", newChapter.pdfFile.name)
+        formData.append("type", "pdf")
+        formData.append("file", newChapter.pdfFile)
+
+        await chapterService.addResource(createdChapter.id.toString(), formData)
       }
-      setChapters([...chapters, chapter])
+
+      toast.success("Chapitre ajouté avec succès")
+
+      // Recharger les chapitres
+      const updatedChapters = await chapterService.getChaptersByCourse(courseId)
+      setChapters(updatedChapters)
+
       setNewChapter({ title: "", duration: "", pdfFile: null })
       setShowAddChapter(false)
+    } catch (err: any) {
+      toast.error(err.message || "Impossible d'ajouter le chapitre")
     }
   }
 
-  const handleDeleteChapter = (id: number) => {
-    setChapters(chapters.filter((ch) => ch.id !== id))
+  const handleEditChapter = (chapter: Chapter) => {
+    setEditingChapter(chapter.id)
+    setEditForm({
+      title: chapter.title,
+      duration: chapter.duration,
+      pdfFile: null
+    })
   }
 
-  const handleEditChapter = (id: number) => {
-    setEditingChapter(id)
+  const handleSaveEdit = async (chapterId: string) => {
+    if (!editForm.title || !editForm.duration) {
+      toast.error("Veuillez remplir tous les champs obligatoires")
+      return
+    }
+
+    try {
+      const updates: Partial<Chapter> = {
+        title: editForm.title,
+        duration: editForm.duration,
+      }
+
+      await chapterService.updateChapter(chapterId, updates)
+
+      // Si un nouveau fichier PDF est fourni, l'ajouter comme ressource
+      if (editForm.pdfFile) {
+        const formData = new FormData()
+        formData.append("name", editForm.pdfFile.name)
+        formData.append("type", "pdf")
+        formData.append("file", editForm.pdfFile)
+        await chapterService.addResource(chapterId, formData)
+      }
+
+      toast.success("Chapitre modifié avec succès")
+
+      // Recharger les chapitres
+      const updatedChapters = await chapterService.getChaptersByCourse(courseId)
+      setChapters(updatedChapters)
+
+      setEditingChapter(null)
+      setEditForm({ title: "", duration: "", pdfFile: null })
+    } catch (err: any) {
+      toast.error(err.message || "Impossible de modifier le chapitre")
+    }
   }
 
-  const handleSaveEdit = (id: number, updatedData: any) => {
-    setChapters(chapters.map((ch) => (ch.id === id ? { ...ch, ...updatedData } : ch)))
-    setEditingChapter(null)
+  const handleDeleteChapter = async () => {
+    if (!chapterToDelete) return
+
+    try {
+      setIsDeleting(true)
+      await chapterService.deleteChapter(chapterToDelete)
+
+      toast.success("Chapitre supprimé avec succès")
+
+      // Recharger les chapitres
+      const updatedChapters = await chapterService.getChaptersByCourse(courseId)
+      setChapters(updatedChapters)
+    } catch (err: any) {
+      toast.error(err.message || "Impossible de supprimer le chapitre")
+    } finally {
+      setIsDeleting(false)
+      setIsDeleteDialogOpen(false)
+      setChapterToDelete(null)
+    }
+  }
+
+  const handleToggleComplete = async (chapterId: string, currentStatus: boolean) => {
+    try {
+      await chapterService.updateChapter(chapterId, { completed: !currentStatus })
+
+      // Mettre à jour localement pour une meilleure UX
+      setChapters(prev => prev.map(ch =>
+        ch.id === chapterId ? { ...ch, completed: !currentStatus } : ch
+      ))
+    } catch (err: any) {
+      toast.error(err.message || "Impossible de changer le statut du chapitre")
+    }
+  }
+
+  const handleDownloadPDF = async (chapterId: string) => {
+    try {
+      // Récupérer les ressources du chapitre
+      const resources = await chapterService.getResources(chapterId)
+      const pdfResource = resources.find((r: any) =>
+        r.type === 'pdf' || r.name?.endsWith('.pdf')
+      )
+
+      if (pdfResource?.url) {
+        const link = document.createElement('a')
+        link.href = pdfResource.url
+        link.download = pdfResource.name || 'document.pdf'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+      } else {
+        toast.error("Aucun fichier PDF disponible pour ce chapitre")
+      }
+    } catch (error) {
+      toast.error("Impossible de télécharger le fichier")
+    }
+  }
+
+  const handleUpdateCourseStatus = async (status: Course['status']) => {
+    if (!course) return
+
+    try {
+      setIsEditing(true)
+      await courseService.updateCourseStatus(courseId, status)
+
+      // Mettre à jour localement
+      setCourse(prev => prev ? { ...prev, status } : null)
+
+      toast.success("Statut du cours mis à jour avec succès")
+    } catch (err: any) {
+      toast.error(err.message || "Impossible de mettre à jour le statut du cours")
+    } finally {
+      setIsEditing(false)
+    }
+  }
+
+  const handleDeleteCourse = async () => {
+    if (!course) return
+
+    try {
+      await courseService.deleteCourse(courseId)
+
+      toast.success("Cours supprimé avec succès")
+
+      router.push('/teacher/courses')
+    } catch (err: any) {
+      toast.error(err.message || "Impossible de supprimer le cours")
+    }
+  }
+
+  if (loading.course && loading.chapters) {
+    return (
+      <div className="container mx-auto p-6">
+        <Skeleton className="h-12 w-48 mb-6" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[...Array(4)].map((_, i) => (
+                <Skeleton key={i} className="h-24 rounded-xl" />
+              ))}
+            </div>
+            <Skeleton className="h-40 rounded-xl" />
+            <Skeleton className="h-96 rounded-xl" />
+          </div>
+          <div className="space-y-6">
+            <Skeleton className="h-64 rounded-xl" />
+            <Skeleton className="h-48 rounded-xl" />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error || !course) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="text-center py-12">
+          <h2 className="text-2xl font-bold mb-2">Cours non trouvé</h2>
+          <p className="text-muted-foreground mb-6">{error || "Le cours demandé n'existe pas"}</p>
+          <Link href="/teacher/courses">
+            <Button>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Retour aux cours
+            </Button>
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  const statusColors = {
+    draft: "bg-green-100 text-green-800",
+    published: "bg-red-100 text-red-800",
+    archived: "bg-yellow-100 text-yellow-800",
+  }
+
+  const statusLabels = {
+    published: "Actif",
+    archived: "Inactif",
+    draft: "En construction",
   }
 
   return (
-    <div className="min-h-screen bg-background ">
-      <div className="p-8">
-        {/* Back Button */}
-        <Link href="/teacher/courses">
-          <Button variant="ghost" className="mb-6 gap-2">
-            <ArrowLeft className="h-4 w-4" />
-            Retour aux cours
-          </Button>
-        </Link>
-
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto p-4 md:p-6">
         {/* Header */}
-        <div className="mb-8">
-          <div className="mb-2 flex items-center gap-3">
-            <h1 className="text-3xl font-bold text-foreground">{course.title}</h1>
-            <span
-              className={`rounded-full px-3 py-1 text-xs font-medium ${
-                course.status === "En cours"
-                  ? "bg-green-500/10 text-green-500"
-                  : course.status === "Terminé"
-                    ? "bg-blue-500/10 text-blue-500"
-                    : "bg-orange-500/10 text-orange-500"
-              }`}
-            >
-              {course.status}
-            </span>
-          </div>
-          <p className="text-muted-foreground">
-            {course.code} • {course.module}
-          </p>
-        </div>
+        <div className="mb-6">
+          <Link href="/teacher/courses">
+            <Button variant="ghost" className="gap-2 mb-4">
+              <ArrowLeft className="h-4 w-4" />
+              Retour aux cours
+            </Button>
+          </Link>
 
-        {/* Stats Cards */}
-        <div className="mb-8 grid gap-6 md:grid-cols-4">
-          <div className="rounded-xl border border-border bg-card p-6">
-            <div className="flex items-center gap-4">
-              <div className="rounded-lg bg-blue-500/10 p-3">
-                <Users className="h-6 w-6 text-blue-500" />
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <h1 className="text-3xl font-bold tracking-tight">{course.titre}</h1>
+                <div className="flex items-center gap-2">
+                  <Badge className={statusColors[course.status]}>
+                    {statusLabels[course.status]}
+                  </Badge>
+                  <Select
+                    value={course.status}
+                    onValueChange={(value: Course['status']) => handleUpdateCourseStatus(value)}
+                    disabled={isEditing}
+                  >
+                    <SelectTrigger className="w-40 h-8">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="published">Actif</SelectItem>
+                      <SelectItem value="archived">Inactif</SelectItem>
+                      <SelectItem value="draft">En construction</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Étudiants</p>
-                <p className="text-2xl font-bold">{course.students}</p>
-              </div>
+              <p className="text-muted-foreground">
+                {course.code} • {module?.name || "Non spécifié"} • {course.moduleId}
+              </p>
             </div>
-          </div>
 
-          <div className="rounded-xl border border-border bg-card p-6">
-            <div className="flex items-center gap-4">
-              <div className="rounded-lg bg-purple-500/10 p-3">
-                <FileText className="h-6 w-6 text-purple-500" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Chapitres</p>
-                <p className="text-2xl font-bold">
-                  {completedChapters}/{course.chapters}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-border bg-card p-6">
-            <div className="flex items-center gap-4">
-              <div className="rounded-lg bg-green-500/10 p-3">
-                <BookOpen className="h-6 w-6 text-green-500" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Crédits</p>
-                <p className="text-2xl font-bold">{course.credits}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-border bg-card p-6">
-            <div className="flex items-center gap-4">
-              <div className="rounded-lg bg-orange-500/10 p-3">
-                <Clock className="h-6 w-6 text-orange-500" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Heures/semaine</p>
-                <p className="text-2xl font-bold">{course.hoursPerWeek}h</p>
-              </div>
+            <div className="flex gap-2">
+              <Button variant="outline">
+                <Edit2 className="h-4 w-4 mr-2" />
+                Modifier le cours
+              </Button>
+              <Button onClick={() => setShowAddChapter(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Nouveau chapitre
+              </Button>
             </div>
           </div>
         </div>
 
-        {/* Progress Bar */}
-        <div className="mb-8 rounded-xl border border-border bg-card p-6">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Progression du cours</h2>
-            <span className="text-2xl font-bold text-primary">{course.progress}%</span>
-          </div>
-          <div className="h-3 w-full overflow-hidden rounded-full bg-secondary">
-            <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${course.progress}%` }} />
-          </div>
-        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Main Content */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Stats Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="rounded-lg bg-blue-100 p-3 dark:bg-blue-900">
+                      <Users className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                    </div>
 
-        <div className="grid gap-8 lg:grid-cols-3">
-          {/* Left Column */}
-          <div className="lg:col-span-2 space-y-8">
-            {/* Description */}
-            <div className="rounded-xl border border-border bg-card p-6">
-              <h2 className="mb-4 text-lg font-semibold">Description</h2>
-              <p className="text-muted-foreground leading-relaxed">{course.description}</p>
-            </div>
+                  </div>
+                </CardContent>
+              </Card>
 
-            {/* Chapters */}
-            <div className="rounded-xl border border-border bg-card p-6">
-              <div className="mb-6 flex items-center justify-between">
-                <h2 className="text-lg font-semibold">
-                  Chapitres ({completedChapters}/{course.chapters})
-                </h2>
-                <Button onClick={() => setShowAddChapter(true)} className="gap-2">
-                  <Plus className="h-4 w-4" />
-                  Ajouter un chapitre
-                </Button>
-              </div>
-
-              {/* Add Chapter Form */}
-              {showAddChapter && (
-                <div className="mb-6 rounded-lg border border-border bg-accent/50 p-4">
-                  <h3 className="mb-4 font-semibold">Nouveau chapitre</h3>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="mb-2 block text-sm font-medium">Titre du chapitre</label>
-                      <Input
-                        value={newChapter.title}
-                        onChange={(e) => setNewChapter({ ...newChapter, title: e.target.value })}
-                        placeholder="Ex: Introduction aux espaces vectoriels"
-                      />
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="rounded-lg bg-purple-100 p-3 dark:bg-purple-900">
+                      <FileText className="h-6 w-6 text-purple-600 dark:text-purple-400" />
                     </div>
                     <div>
-                      <label className="mb-2 block text-sm font-medium">Durée</label>
-                      <Input
-                        value={newChapter.duration}
-                        onChange={(e) => setNewChapter({ ...newChapter, duration: e.target.value })}
-                        placeholder="Ex: 2h"
-                      />
+                      <p className="text-sm text-muted-foreground">Chapitres</p>
+                      <p className="text-2xl font-bold">
+                        {completedChapters}/{chapters.length}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="rounded-lg bg-green-100 p-3 dark:bg-green-900">
+                      <BookOpen className="h-6 w-6 text-green-600 dark:text-green-400" />
                     </div>
                     <div>
-                      <label className="mb-2 block text-sm font-medium">PDF du cours (optionnel)</label>
-                      <div className="flex items-center gap-2">
+                      <p className="text-sm text-muted-foreground">Crédits</p>
+                      <p className="text-2xl font-bold">{course.credits || 0}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="rounded-lg bg-orange-100 p-3 dark:bg-orange-900">
+                      <Clock className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+                    </div>
+
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Chapters Section */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Chapitres</CardTitle>
+                    <CardDescription>
+                      Gérez les chapitres et le contenu du cours
+                    </CardDescription>
+                  </div>
+                  <Button onClick={() => setShowAddChapter(true)} className="gap-2">
+                    <Plus className="h-4 w-4" />
+                    Ajouter un chapitre
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {/* Add Chapter Form */}
+                {showAddChapter && (
+                  <div className="mb-6 rounded-lg border p-4">
+                    <h3 className="font-semibold mb-4">Nouveau chapitre</h3>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-sm font-medium mb-2 block">Titre du chapitre *</label>
+                        <Input
+                          value={newChapter.title}
+                          onChange={(e) => setNewChapter({ ...newChapter, title: e.target.value })}
+                          placeholder="Ex: Introduction aux espaces vectoriels"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium mb-2 block">Durée *</label>
+                        <Input
+                          value={newChapter.duration}
+                          onChange={(e) => setNewChapter({ ...newChapter, duration: e.target.value })}
+                          placeholder="Ex: 2h"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium mb-2 block">PDF du cours (optionnel)</label>
                         <Input
                           type="file"
                           accept=".pdf"
                           onChange={(e) => setNewChapter({ ...newChapter, pdfFile: e.target.files?.[0] || null })}
-                          className="flex-1"
+                          className="cursor-pointer"
                         />
                         {newChapter.pdfFile && (
-                          <span className="text-sm text-muted-foreground">{newChapter.pdfFile.name}</span>
+                          <p className="text-sm text-muted-foreground mt-2">
+                            Fichier sélectionné : {newChapter.pdfFile.name}
+                          </p>
                         )}
                       </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button onClick={handleAddChapter} className="flex-1">
-                        Ajouter
-                      </Button>
-                      <Button onClick={() => setShowAddChapter(false)} variant="outline" className="flex-1">
-                        Annuler
-                      </Button>
+                      <div className="flex gap-2 pt-2">
+                        <Button onClick={handleAddChapter} className="flex-1">
+                          Ajouter le chapitre
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => setShowAddChapter(false)}
+                          className="flex-1"
+                        >
+                          Annuler
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Chapters List */}
-              <div className="space-y-3">
-                {chapters.map((chapter) => (
-                  <div
-                    key={chapter.id}
-                    className="flex items-center justify-between rounded-lg border border-border p-4 transition-colors hover:bg-accent"
-                  >
-                    {editingChapter === chapter.id ? (
-                      <EditChapterForm
-                        chapter={chapter}
-                        onSave={(data) => handleSaveEdit(chapter.id, data)}
-                        onCancel={() => setEditingChapter(null)}
-                      />
-                    ) : (
-                      <>
-                        <div className="flex items-center gap-4 flex-1">
-                          {chapter.completed ? (
-                            <CheckCircle className="h-5 w-5 text-green-500 shrink-0" />
-                          ) : (
-                            <Circle className="h-5 w-5 text-muted-foreground shrink-0" />
-                          )}
-                          <div className="flex-1">
-                            <p
-                              className={`font-medium ${chapter.completed ? "text-foreground" : "text-muted-foreground"}`}
-                            >
-                              {chapter.title}
-                            </p>
-                            <div className="flex items-center gap-4 mt-1">
-                              <p className="text-sm text-muted-foreground">
-                                {chapter.duration} • {chapter.students} étudiants
-                              </p>
-                              {chapter.pdfUrl && (
-                                <span className="flex items-center gap-1 text-xs text-primary">
-                                  <FileText className="h-3 w-3" />
-                                  {chapter.pdfName || "PDF disponible"}
-                                </span>
-                              )}
+                {/* Chapters List */}
+                <div className="space-y-3">
+                  {loading.chapters ? (
+                    [...Array(5)].map((_, i) => (
+                      <Skeleton key={i} className="h-20 rounded-lg" />
+                    ))
+                  ) : chapters.length === 0 ? (
+                    <div className="text-center py-8">
+                      <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                      <h3 className="font-medium mb-2">Aucun chapitre</h3>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Commencez par ajouter votre premier chapitre
+                      </p>
+                      <Button onClick={() => setShowAddChapter(true)}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Ajouter un chapitre
+                      </Button>
+                    </div>
+                  ) : (
+                    chapters
+                      .sort((a, b) => a.order - b.order)
+                      .map((chapter) => (
+                        <div
+                          key={chapter.id}
+                          className="flex items-center justify-between rounded-lg border p-4 hover:bg-muted/50 transition-colors"
+                        >
+                          {editingChapter === chapter.id ? (
+                            <div className="w-full space-y-4">
+                              <div className="space-y-3">
+                                <div>
+                                  <label className="text-sm font-medium mb-2 block">Titre *</label>
+                                  <Input
+                                    value={editForm.title}
+                                    onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                                    placeholder="Titre du chapitre"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="text-sm font-medium mb-2 block">Durée *</label>
+                                  <Input
+                                    value={editForm.duration}
+                                    onChange={(e) => setEditForm({ ...editForm, duration: e.target.value })}
+                                    placeholder="Ex: 2h"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="text-sm font-medium mb-2 block">PDF (optionnel)</label>
+                                  <Input
+                                    type="file"
+                                    accept=".pdf"
+                                    onChange={(e) => setEditForm({ ...editForm, pdfFile: e.target.files?.[0] || null })}
+                                    className="cursor-pointer"
+                                  />
+                                  {editForm.pdfFile && (
+                                    <p className="text-sm text-muted-foreground mt-2">
+                                      Nouveau fichier : {editForm.pdfFile.name}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex gap-2 pt-2">
+                                <Button
+                                  onClick={() => handleSaveEdit(chapter.id)}
+                                  size="sm"
+                                  className="flex-1"
+                                >
+                                  Enregistrer
+                                </Button>
+                                <Button
+                                  onClick={() => setEditingChapter(null)}
+                                  variant="outline"
+                                  size="sm"
+                                  className="flex-1"
+                                >
+                                  Annuler
+                                </Button>
+                              </div>
                             </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          {chapter.pdfUrl && (
-                            <Button variant="ghost" size="sm" className="gap-2">
-                              <Download className="h-4 w-4" />
-                            </Button>
+                          ) : (
+                            <>
+                              <div className="flex items-center gap-4 flex-1">
+                                <button
+                                  onClick={() => handleToggleComplete(chapter.id, chapter.completed)}
+                                  className="shrink-0"
+                                  title={chapter.completed ? "Marquer comme non terminé" : "Marquer comme terminé"}
+                                >
+                                  {chapter.completed ? (
+                                    <CheckCircle className="h-5 w-5 text-green-500" />
+                                  ) : (
+                                    <Circle className="h-5 w-5 text-muted-foreground" />
+                                  )}
+                                </button>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <span className="text-sm font-medium text-muted-foreground">
+                                      Chapitre {chapter.order}
+                                    </span>
+                                    <Separator orientation="vertical" className="h-4" />
+                                    <span className="text-sm text-muted-foreground">
+                                      {chapter.duration}
+                                    </span>
+                                  </div>
+                                  <h4 className={`font-medium ${chapter.completed ? "text-foreground" : "text-muted-foreground"}`}>
+                                    {chapter.title}
+                                  </h4>
+                                  <div className="flex items-center gap-4 mt-2">
+                                    <span className="text-sm text-muted-foreground">
+                                    </span>
+                                    <button
+                                      onClick={() => handleDownloadPDF(chapter.id)}
+                                      className="text-sm text-primary hover:underline flex items-center gap-1"
+                                    >
+                                      <FileText className="h-3 w-3" />
+                                      Télécharger PDF
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 shrink-0">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleEditChapter(chapter)}
+                                  title="Modifier le chapitre"
+                                >
+                                  <Edit2 className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    setChapterToDelete(chapter.id)
+                                    setIsDeleteDialogOpen(true)
+                                  }}
+                                  className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                                  title="Supprimer le chapitre"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </>
                           )}
-                          <Button variant="ghost" size="sm" onClick={() => handleEditChapter(chapter.id)}>
-                            <Edit2 className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteChapter(chapter.id)}
-                            className="text-red-500 hover:text-red-600"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
                         </div>
-                      </>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Top Students */}
-            <div className="rounded-xl border border-border bg-card p-6">
-              <h2 className="mb-6 text-lg font-semibold">Top Étudiants</h2>
-              <div className="space-y-4">
-                {students.map((student, index) => (
-                  <div
-                    key={student.id}
-                    className="flex items-center justify-between rounded-lg border border-border p-4"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 font-semibold text-primary">
-                        #{index + 1}
-                      </div>
-                      <div>
-                        <p className="font-medium">{student.name}</p>
-                        <p className="text-sm text-muted-foreground">{student.matricule}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-primary">{student.progress}%</p>
-                      <p className="text-xs text-muted-foreground">Progression</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+                      ))
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
-          {/* Right Column */}
+          {/* Sidebar */}
           <div className="space-y-6">
-            <div className="rounded-xl border border-border bg-card p-6">
-              <h2 className="mb-4 text-lg font-semibold">Informations</h2>
-              <div className="space-y-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Département</p>
-                  <p className="font-medium">{course.department}</p>
+            {/* Course Info */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Informations du cours</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <Building className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">Module</p>
+                      <p className="font-medium">{module?.name}</p>
+                    </div>
+                  </div>
+
+
+                  <div className="flex items-center gap-3">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">Semestre</p>
+                      <p className="font-medium">{module?.semestre}</p>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Semestre</p>
-                  <p className="font-medium">{course.semester}</p>
+
+                <Separator />
+
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-muted-foreground">Date de début</span>
+                    <span className="font-medium">
+                      {course.startDate ? new Date(course.startDate).toLocaleDateString("fr-FR") : "Non spécifiée"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-muted-foreground">Date de fin</span>
+                    <span className="font-medium">
+                      {course.endDate ? new Date(course.endDate).toLocaleDateString("fr-FR") : "Non spécifiée"}
+                    </span>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Date de début</p>
-                  <p className="font-medium">{new Date(course.startDate).toLocaleDateString("fr-FR")}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Date de fin</p>
-                  <p className="font-medium">{new Date(course.endDate).toLocaleDateString("fr-FR")}</p>
-                </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
+
+            {/* Course Description */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Description</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {course.description || "Aucune description disponible"}
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Course Actions */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Actions rapides</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <Button variant="outline" className="w-full justify-start">
+                  <FileText className="h-4 w-4 mr-2" />
+                  Voir les statistiques détaillées
+                </Button>
+                <Button variant="outline" className="w-full justify-start">
+                  <Users className="h-4 w-4 mr-2" />
+                  Gérer les étudiants
+                </Button>
+                <Button variant="outline" className="w-full justify-start">
+                  <Download className="h-4 w-4 mr-2" />
+                  Exporter les données
+                </Button>
+                <Button
+                  variant="destructive"
+                  className="w-full justify-start"
+                  onClick={handleDeleteCourse}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Supprimer le cours
+                </Button>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
-    </div>
-  )
-}
 
-function EditChapterForm({
-  chapter,
-  onSave,
-  onCancel,
-}: {
-  chapter: any
-  onSave: (data: any) => void
-  onCancel: () => void
-}) {
-  const [title, setTitle] = useState(chapter.title)
-  const [duration, setDuration] = useState(chapter.duration)
-  const [pdfFile, setPdfFile] = useState<File | null>(null)
-
-  const handleSave = () => {
-    const updatedData: any = { title, duration }
-    if (pdfFile) {
-      updatedData.pdfUrl = URL.createObjectURL(pdfFile)
-      updatedData.pdfName = pdfFile.name
-    }
-    onSave(updatedData)
-  }
-
-  return (
-    <div className="flex-1 space-y-3">
-      <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Titre" />
-      <Input value={duration} onChange={(e) => setDuration(e.target.value)} placeholder="Durée" />
-      <div className="flex items-center gap-2">
-        <Input type="file" accept=".pdf" onChange={(e) => setPdfFile(e.target.files?.[0] || null)} />
-        {pdfFile && <span className="text-xs text-muted-foreground">{pdfFile.name}</span>}
-      </div>
-      <div className="flex gap-2">
-        <Button onClick={handleSave} size="sm" className="flex-1">
-          Enregistrer
-        </Button>
-        <Button onClick={onCancel} size="sm" variant="outline" className="flex-1 bg-transparent">
-          Annuler
-        </Button>
-      </div>
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmer la suppression</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir supprimer ce chapitre ? Cette action est irréversible.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsDeleteDialogOpen(false)
+                setChapterToDelete(null)
+              }}
+              disabled={isDeleting}
+            >
+              Annuler
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteChapter}
+              disabled={isDeleting}
+            >
+              {isDeleting ? "Suppression..." : "Supprimer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -53,7 +53,7 @@ export default function AddUser() {
 
   // Initialisation du formulaire avec react-hook-form
   const form = useForm<UserFormData>({
-    resolver: zodResolver(userSchema),
+    resolver: zodResolver(userSchema) as any,
     defaultValues: {
       role: 'STUDENT',
       nom: '',

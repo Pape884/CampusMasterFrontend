@@ -20,14 +20,7 @@ export interface AuthResponse {
   data: {
     token: string,
     refreshToken: string
-    user: {
-      id: string,
-      prenom: string,
-      nom: string,
-      email: string,
-      role: UserRole,
-      isActive: boolean
-    }
+    user: User
   },
   timestamp: Date
 }
@@ -71,7 +64,7 @@ export interface CreateUserRequest {
   departement: string;
   modules: string[];
   isActive: boolean;
-  
+
 }
 
 export interface UserUpdateDto {
@@ -144,15 +137,6 @@ export interface UsersResponse {
  * 
  */
 
-export interface Course {
-  id: string
-  name: string
-  code: string
-  credits: number
-  students: number
-  instructor: string
-}
-
 export interface Module {
   id: string
   name: string
@@ -163,7 +147,7 @@ export interface Module {
   courses?: Course[]
 }
 
-export interface modulesResponse{
+export interface modulesResponse {
   message: string
   data: Module[];
 }
@@ -252,4 +236,76 @@ export interface UpdateModuleRequest {
   code?: string
   departmentId?: string
   isActive?: boolean
+}
+
+/**
+ * TYPES DE COURSES
+ */
+
+export interface Chapter {
+  id: string;
+  title: string;
+  description?: string;
+  courseId?: string
+  order: number;
+  content?: string;
+  resources?: Array<{
+    id: string;
+    name: string;
+    type: 'pdf' | 'video' | 'link' | 'document';
+    url: string;
+    size?: string;
+  }>;
+  completed: boolean;
+  duration: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Course {
+  id: string;
+  titre: string;
+  code: string;
+  description?: string;
+  credits: string;
+  moduleId: string;
+  chaptersCount: number;
+  studentsCount: number;
+  startDate: Date;
+  endDate: Date;
+  progress: number; // Pourcentage moyen de progression des étudiants
+  status: 'published' | 'draft' | 'archived';
+  isActive?: boolean;
+  createdAt: string;
+  updatedAt: string;
+  chapters?: Chapter[];
+}
+
+export interface CourseUpdateDto {
+  titre: string;
+  code: string;
+  credits: string;
+  moduleId: string;
+  status: 'published' | 'draft' | 'archived';
+  description?: string;
+
+}
+
+//creation de coursDTO
+export interface CourseCreateDto {
+  titre: string;
+  code: string;
+  credits: string;
+  moduleId: string;
+  status: 'published' | 'draft' | 'archived';
+  description?: string ;
+}
+
+//Response de l'api cours
+export interface CourseResponse{
+  success: boolean,
+  message: string
+  data: Course[],
+  timestamp: Date
+
 }

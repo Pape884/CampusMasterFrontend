@@ -1,13 +1,11 @@
 "use client"
-
-import { UserRole } from "@/components/layout/SidebarMenu"
 import Layout from "@/components/layout/Layout"
-import { useState } from "react"  
-import CourseDetailsPage from "@/components/teacher/courses/course-detail"
+import EditCoursePage from "@/components/teacher/courses/add-course"
 import Unauthorized from "@/components/ui/Unauthorized"
 import { useAuthContext } from "@/context/authContext"
 
-export default function EditCourses() {
+
+export default function TeacherCourses() {
      const { user } = useAuthContext();
           
           // Si pas d'utilisateur
@@ -16,8 +14,8 @@ export default function EditCourses() {
           }
 
     return (
-        <Layout userRole={user.role} title="Gestions des Cours">
-                <CourseDetailsPage/>
+        <Layout userRole={user.role} title="Gestions des Cours Affectés">
+                <EditCoursePage/>
         </Layout>
 
     )

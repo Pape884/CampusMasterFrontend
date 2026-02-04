@@ -57,7 +57,7 @@ export default function EditUserPage() {
 
   // Initialisation du formulaire avec react-hook-form
   const form = useForm<UserUpdateFormData>({
-    resolver: zodResolver(updateUserSchema),
+    resolver: zodResolver(updateUserSchema) as any,
     defaultValues: {
       role: 'STUDENT',
       nom: '',
@@ -590,35 +590,35 @@ export default function EditUserPage() {
                       <li className="flex items-center gap-2">
                         <div className={cn(
                           "h-1.5 w-1.5 rounded-full",
-                          form.watch('password').length >= 8 ? "bg-green-500" : "bg-gray-300"
+                          (form.watch('password') || '').length >= 8 ? "bg-green-500" : "bg-gray-300"
                         )} />
                         Au moins 8 caractères
                       </li>
                       <li className="flex items-center gap-2">
                         <div className={cn(
                           "h-1.5 w-1.5 rounded-full",
-                          /[A-Z]/.test(form.watch('password')) ? "bg-green-500" : "bg-gray-300"
+                          /[A-Z]/.test(form.watch('password') || '') ? "bg-green-500" : "bg-gray-300"
                         )} />
                         Au moins une majuscule
                       </li>
                       <li className="flex items-center gap-2">
                         <div className={cn(
                           "h-1.5 w-1.5 rounded-full",
-                          /[a-z]/.test(form.watch('password')) ? "bg-green-500" : "bg-gray-300"
+                          /[a-z]/.test(form.watch('password') || '') ? "bg-green-500" : "bg-gray-300"
                         )} />
                         Au moins une minuscule
                       </li>
                       <li className="flex items-center gap-2">
                         <div className={cn(
                           "h-1.5 w-1.5 rounded-full",
-                          /[0-9]/.test(form.watch('password')) ? "bg-green-500" : "bg-gray-300"
+                          /[0-9]/.test(form.watch('password') || '') ? "bg-green-500" : "bg-gray-300"
                         )} />
                         Au moins un chiffre
                       </li>
                       <li className="flex items-center gap-2">
                         <div className={cn(
                           "h-1.5 w-1.5 rounded-full",
-                          /[^A-Za-z0-9]/.test(form.watch('password')) ? "bg-green-500" : "bg-gray-300"
+                          /[^A-Za-z0-9]/.test(form.watch('password') || '') ? "bg-green-500" : "bg-gray-300"
                         )} />
                         Au moins un caractère spécial
                       </li>

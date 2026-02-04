@@ -157,30 +157,28 @@ if (error) {
                         </div>
                       </div>
                       <span className="rounded-full bg-primary/10 px-2 py-1 text-xs text-primary">
-                        {module.courses.length} cours
+                        {module.courses?.length} cours
                       </span>
                     </button>
 
                     {expandedModules.includes(module.id) && (
                       <div className="border-t px-4 pb-4">
                         <div className="mt-3 space-y-2">
-                          {module.courses.map((course) => (
+                          {module.courses?.map((course) => (
                             <div
                               key={course.id}
                               className="flex items-center justify-between rounded-md bg-background p-3"
                             >
                               <div className="flex-1">
                                 <div className="flex items-center gap-2">
-                                  <h4 className="font-medium">{course.name}</h4>
+                                  <h4 className="font-medium">{course.titre}</h4>
                                   <span className="text-sm text-muted-foreground">({course.code})</span>
                                 </div>
-                                <p className="text-sm text-muted-foreground">{course.instructor}</p>
                               </div>
                               <div className="flex items-center gap-4 text-sm">
                                 <span className="rounded-full bg-blue-500/10 px-2 py-1 text-xs text-blue-500">
                                   {course.credits} crédits
                                 </span>
-                                <span className="text-muted-foreground">{course.students} étudiants</span>
                               </div>
                             </div>
                           ))}

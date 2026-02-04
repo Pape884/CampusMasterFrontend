@@ -8,13 +8,13 @@ class ModuleService {
   private readonly baseUrl = "/modules"
 
   /* 🔹 Récupérer tous les modules */
-  async getAll(): Promise<Module[]> {
+  async getAll(): Promise<modulesResponse[]> {
     const { data } = await apiClient.get(this.baseUrl)
     return data.data
   }
 
   /* 🔹 Récupérer les modules d’un département */
-  async getByDepartment(departmentId: string): Promise<Module[]> {
+  async getByDepartment(departmentId: string): Promise<modulesResponse[]> {
     const { data } = await apiClient.get(
       `${this.baseUrl}?departmentId=${departmentId}`
     )
@@ -57,6 +57,15 @@ class ModuleService {
       { isActive }
     )
     return data
+  }
+
+
+  /* RECUPERER LES MODULES D'UN ENSEIGNANT*/
+  async getTeacherModules(teacherId: string): Promise<modulesResponse[]> {
+    const { data } = await apiClient.get(
+      `${this.baseUrl}?teacherId=${teacherId}`
+    )
+    return data.data
   }
 }
 
