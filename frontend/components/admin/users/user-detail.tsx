@@ -319,7 +319,7 @@ export default function UserDetailsPage() {
               </div>
             </div>
           </div>
-          <Link href={`/admin/users/${userId}/edit`}>
+          <Link href={`/admin/user/${userId}/edit`}>
             <Button className="gap-2">
               <Edit className="h-4 w-4" />
               Modifier

@@ -367,9 +367,9 @@ class CourseService {
 export const courseService = new CourseService();
 
 /**
- * HOOK REACT POUR LES DÉPARTEMENTS
+ * HOOK REACT POUR LES COURS
  */
-export function useDepartments() {
+export function useCourses() {
   return {
     getCourses: courseService.getCourses.bind(courseService),
     getCourseById: courseService.getCourseById.bind(courseService),
